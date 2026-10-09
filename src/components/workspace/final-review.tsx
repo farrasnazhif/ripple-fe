@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MediaPreview } from "@/components/workspace/media-review";
 import type { Brief, FinalOutput, GenerationJob } from "@/types/ripple";
 
-export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, refresh }: {
+export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, refresh, initialId }: {
+  initialId?: string;
   projectId: string;
   token: string;
   finals: FinalOutput[];
@@ -18,7 +19,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   run: (fn: () => Promise<void>) => void;
   refresh: () => Promise<void>;
 }) {
-  const [id, setId] = useState(() => finals.find((final) => final.accepted !== false)?.id);
+  const [id, setId] = useState(() => initialId || finals.find((final) => final.accepted !== false)?.id);
   const [imageIndex, setImageIndex] = useState(0);
   const [adjusting, setAdjusting] = useState(false);
   const [compare, setCompare] = useState(false);
@@ -59,11 +60,11 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   return (
     <div className="grid min-w-0 gap-6 lg:grid-cols-[0.8fr_1.2fr]">
       <div className="grid content-start gap-4">
-        <h3 className="font-semibold">{video ? "Final Video" : "Final Images"} · Version {versions.findIndex((final) => final.id === selected.id) + 1}</h3>
+        <h3 className="font-semibold">{video ? "Final Video" : selected.outputs.length > 1 ? "Final Images" : "Final Image"} · Version {versions.findIndex((final) => final.id === selected.id) + 1}</h3>
         <p className="text-sm text-neutral-500">Brief v{selected.brief_version} · {selected.accepted !== false ? "Accepted" : completed ? "Pending approval" : selected.status}</p>
-        {stale && <p className="text-sm text-amber-700">The brief or accepted source outputs have changed. Review the affected shots and rebuild the final before refining or accepting this version.</p>}
+        {stale && <p className="text-sm text-amber-700">{video || selected.job_ids.length ? "The brief or accepted source outputs have changed. Review the affected shots and rebuild the final before refining or accepting this version." : "The brief summary has changed. Generate a new final image from the updated summary before refining or accepting this version."}</p>}
         {brief.summary && <p className="whitespace-pre-wrap text-sm">{brief.summary}</p>}
-        {selected.prompt && <section className="grid gap-2 rounded-md border p-3 text-sm"><h4 className="font-medium">Saved adjustments</h4><p className="whitespace-pre-wrap">{selected.prompt}</p><p className="text-neutral-500">Reason: {selected.reason}</p></section>}
+        {selected.prompt && <section className="grid gap-2 rounded-md border p-3 text-sm"><h4 className="font-medium">{selected.parent_id ? "Saved adjustments" : "Generation prompt"}</h4><p className="whitespace-pre-wrap">{selected.prompt}</p><p className="text-neutral-500">Reason: {selected.reason}</p></section>}
         {active && <p role="status" className="text-sm text-amber-700">{active.status === "unknown" || active.status === "submitting" ? "Submission is awaiting confirmation. Reload to check its saved status before sending another request." : "A refined final is generating. Its preview will appear here when ready."}</p>}
         {!completed && !active && <p role="alert" className="text-sm text-red-600">This refinement {selected.status === "nsfw" ? "was blocked by the provider" : `ended with status ${selected.status}`}. Select a completed version to try different adjustments.</p>}
         <Button variant="outline" disabled={busy || !!active || stale || !completed || !url} onClick={() => { setAdjusting(!adjusting); setPrompt(""); setReason(""); }}><SlidersHorizontal />Adjust / Refine</Button>

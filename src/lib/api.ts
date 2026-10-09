@@ -113,6 +113,8 @@ export const api = {
       { method: "POST", data: { job_id, action, reason } },
       token,
     ),
+  generateFinalImage: (project: string, data: { request_key: string; expected_version: number }, token: string) =>
+    request<FinalOutput>(`/projects/${project}/images`, { method: "POST", data }, token),
   refineFinal: (project: string, source: string, data: { request_key: string; image_index: number; prompt: string; reason: string }, token: string) =>
     request<FinalOutput>(`/projects/${project}/finals/${source}/refinements`, { method: "POST", data }, token),
   finalStatus: (project: string, id: string, token: string) =>

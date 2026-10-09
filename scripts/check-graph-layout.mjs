@@ -101,7 +101,7 @@ console.log(
 );
 
 const review = {
-  output_type: "image",
+  output_type: "video",
   points: [],
   versions: [{ version: 2 }],
   changes: [
@@ -121,6 +121,7 @@ const review = {
 };
 const old = {
   ...job,
+  kind: "video",
   brief_version: 1,
   accepted: true,
   status: "completed",
@@ -156,7 +157,7 @@ assert.equal(
 review.finals = [
   {
     id: "final-1",
-    kind: "image",
+    kind: "video",
     brief_version: 2,
     job_ids: ["job-1"],
     outputs: old.outputs,
@@ -166,7 +167,7 @@ assert.deepEqual(
   projectCanvasNodes("", "Brief", 0, "Summary", shots, [old, newer], review).at(
     -1,
   ).parents,
-  ["shot-1:image"],
+  ["shot-1:video"],
 );
 console.log(
   "Media versions share a node, selective impact is shown, and final outputs connect to their accepted inputs.",
@@ -183,3 +184,22 @@ const refinedGraph = projectCanvasNodes("", "Brief", 0, "Summary", shots, [old, 
 assert.equal(refinedGraph.at(-1).preview, refinedFinal.outputs[0]);
 assert.equal(refinedGraph.at(-1).summary, "Warmer lighting");
 console.log("Final refinement candidates stay off the canvas until accepted; accepted revisions preserve provenance.");
+
+const imageFinal = { id: "direct", kind: "image", brief_version: 2, job_ids: [], outputs: ["https://example.com/direct.png"], accepted: false, status: "completed", prompt: "Confirmed brief" };
+for (const legacyShots of [[], shots]) {
+  const imageReview = { ...review, output_type: "image", finals: [imageFinal] };
+  const imageGraph = projectCanvasNodes("", "Brief", 0, "Summary", legacyShots, [old, newer], imageReview);
+  assert.deepEqual(imageGraph.map(node => node.id), ["brief", "summary", "final"]);
+  assert.equal(imageGraph[2].parent, "summary");
+  assert.equal(imageGraph[2].preview, imageFinal.outputs[0]);
+  assert.match(imageGraph[2].status, /Pending approval/);
+  for (const status of ["queued", "failed", "completed"]) {
+    const pendingGraph = projectCanvasNodes("", "Brief", 0, "Summary", legacyShots, [], { ...imageReview, finals: [{ ...imageFinal, status, outputs: [] }] });
+    assert.deepEqual(pendingGraph.map(node => node.id), ["brief", "summary"]);
+  }
+  const accepted = { ...imageFinal, id: "accepted", accepted: true };
+  const candidate = { ...imageFinal, id: "refined", parent_id: accepted.id, outputs: ["https://example.com/refined.png"] };
+  const acceptedGraph = projectCanvasNodes("", "Brief", 0, "Summary", legacyShots, [], { ...imageReview, finals: [candidate, accepted] });
+  assert.equal(acceptedGraph.at(-1).preview, accepted.outputs[0]);
+}
+console.log("Images go directly from summary to final output, with no plan or shot nodes; video keeps its storyboard.");

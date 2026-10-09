@@ -19,7 +19,7 @@ import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-ac
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ export function Workspace({
 }) {
   const cache = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
+  const [finalId, setFinalId] = useState<string | undefined>();
   const [planning, setPlanning] = useState(false);
   const [rows, setRows] = useState<PlanRow[]>([
     { title: "", prompt: "", requirement_keys: [] },
@@ -111,6 +112,7 @@ export function Workspace({
     action.mutate(fn);
   }
   function open(id: string) {
+    setFinalId(undefined);
     setSelected(id);
     setPlanning(false);
     setNotice("");
@@ -119,7 +121,7 @@ export function Workspace({
   const state = review.data;
   const current = brief.data;
   const kind = state?.output_type === "image" ? "image" : "video";
-  const planTitle = kind === "image" ? "Image Plan" : "Storyboard";
+  const planTitle = "Storyboard";
   const parts = selected?.split(":");
   const selectedShot = shots.data?.find((s) => s.id === parts?.[0]);
   const selectedKind = parts?.[1] as "image" | "video" | undefined;
@@ -201,8 +203,8 @@ export function Workspace({
         rawText={current?.raw_text || ""}
         summary={current?.summary}
         fileCount={attachments.data?.length || 0}
-        shots={shots.data}
-        jobs={jobs.data}
+        shots={state ? shots.data : undefined}
+        jobs={state ? jobs.data : undefined}
         review={state}
         onSelect={open}
       />
@@ -279,35 +281,41 @@ export function Workspace({
                     <h3 className="font-semibold">
                       What would you like to generate?
                     </h3>
-                    {shots.data?.length ? (
-                      <Button onClick={() => open("storyboard")}>
-                        Open {planTitle.toLowerCase()}
-                      </Button>
+                    <p className="text-sm text-neutral-500">Images generate directly from the saved summary and requirements. Save any edits above before generating.</p>
+                    {state.output_type === "video" && shots.data?.length ? (
+                      <Button onClick={() => open("storyboard")}>Open storyboard</Button>
                     ) : (
                       <div className="flex flex-wrap gap-3">
-                        {(["image", "video"] as const).map((output) => (
-                          <Button
-                            key={output}
-                            variant="outline"
-                            disabled={
-                              action.isPending ||
-                              shots.isPending ||
-                              shots.isError
-                            }
-                            onClick={() =>
-                              run(async () => {
-                                await api.outputType(project.id, output, token);
-                                await refresh();
-                                setPlanning(true);
-                              })
-                            }
-                          >
-                            {output === "image" ? <ImageIcon /> : <Video />}
-                            {output === "image"
-                              ? "Images · Create image plan"
-                              : "Video · Create storyboard"}
-                          </Button>
-                        ))}
+                        <Button variant="generation"
+                          disabled={action.isPending || review.isError || state.finals.some((final) => ["submitting", "unknown", "queued", "in_progress"].includes(final.status || ""))}
+                          onClick={() => run(async () => {
+                            if (state.output_type !== "image") await api.outputType(project.id, "image", token);
+                            const storageKey = `ripple:direct-image:${project.id}:${current.version}`;
+                            const key = sessionStorage.getItem(storageKey) || crypto.randomUUID();
+                            sessionStorage.setItem(storageKey, key);
+                            try {
+                              const result = await api.generateFinalImage(project.id, { request_key: key, expected_version: current.version }, token);
+                              setFinalId(result.id);
+                              sessionStorage.removeItem(storageKey);
+                              setSelected("final");
+                            } catch (error) {
+                              if (error instanceof ApiError && [400, 404, 409, 503].includes(error.status)) sessionStorage.removeItem(storageKey);
+                              throw error;
+                            } finally { await refresh(); }
+                          })}>
+                          <ImageIcon />Generate final image
+                        </Button>
+                        {state.finals.some((final) => final.kind === "image") && (
+                          <Button variant="outline" onClick={() => open("final")}>Open final image</Button>
+                        )}
+                        <Button variant="outline"
+                          disabled={action.isPending || shots.isPending || shots.isError || state.finals.some((final) => final.kind === "image" && !["failed", "nsfw", "canceled"].includes(final.status || "completed"))}
+                          onClick={() => run(async () => {
+                            await api.outputType(project.id, "video", token);
+                            await refresh(); setPlanning(true);
+                          })}>
+                          <Video />Video · Create storyboard
+                        </Button>
                       </div>
                     )}
                   </section>
@@ -617,10 +625,12 @@ export function Workspace({
           )}
           {selected === "final" && state && current && (
             <div className="grid gap-5">
-              <FinalReview projectId={project.id} token={token} finals={state.finals}
+              <FinalReview projectId={project.id} token={token} finals={state.finals} initialId={finalId}
                 brief={current} jobs={jobs.data || []} busy={action.isPending || jobs.isPending || jobs.isError}
                 run={run} refresh={refresh} />
-              <Button variant="outline" onClick={() => open("storyboard")}>Review {planTitle.toLowerCase()}</Button>
+              <Button variant="outline" onClick={() => open(state.output_type === "image" ? "summary" : "storyboard")}>
+                {state.output_type === "image" ? "Back to brief summary" : "Review storyboard"}
+              </Button>
             </div>
           )}
           {notice && (

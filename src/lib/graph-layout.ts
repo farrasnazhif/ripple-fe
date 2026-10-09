@@ -53,13 +53,27 @@ export function projectCanvasNodes(
     ...nodePosition("summary"),
     kind: "stage",
   });
+  if (review?.output_type === "image") {
+    const completed = review.finals.filter((output) => output.kind === "image" &&
+      (!output.status || output.status === "completed") && output.outputs.length);
+    const final = completed.find((output) => output.accepted !== false) || completed[0];
+    const inputsChanged = final?.job_ids.some((id) => !jobs.some((job) => job.id === id && job.accepted));
+    if (final) nodes.push({
+      id: "final", parent: "summary",
+      title: final.outputs.length > 1 ? "Final Images" : "Final Image",
+      summary: final.prompt || summary,
+      status: `Brief v${final.brief_version} · ${(version && final.brief_version < version) || inputsChanged ? "Earlier version" : final.accepted === false ? "Pending approval" : "Ready"}`,
+      x: 700, y: 180, kind: "stage", preview: final.outputs[0],
+    });
+    return nodes;
+  }
   if (!shots.length) return nodes;
   nodes.push({
     id: "storyboard",
     parent: "summary",
-    title: review?.output_type === "image" ? "Image Plan" : "Storyboard",
+    title: "Storyboard",
     summary: shots.map((s) => s.title).join(" · "),
-    status: `${shots.length} ${review?.output_type === "image" ? "images" : "shots"}`,
+    status: `${shots.length} shots`,
     x: 700,
     y: 180,
     kind: "stage",
