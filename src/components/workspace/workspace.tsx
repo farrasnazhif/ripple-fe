@@ -8,13 +8,13 @@ import {
   ImageIcon,
   Video,
   Check,
-  Download,
   ArrowRight,
 } from "lucide-react";
 import { GraphCanvas } from "@/components/workspace/graph-canvas";
 import { BriefDetailDialog } from "@/components/brief/brief-detail-dialog";
 import { BriefEditor } from "@/components/workspace/brief-editor";
-import { MediaReview, MediaPreview } from "@/components/workspace/media-review";
+import { FinalReview } from "@/components/workspace/final-review";
+import { MediaReview } from "@/components/workspace/media-review";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,8 +58,15 @@ export function Workspace({
   });
   const review = useQuery({
     queryKey: ["review", token, project.id],
-    queryFn: () => api.review(project.id, token),
-    refetchInterval: 4 * 60 * 1000,
+    queryFn: async () => {
+      const saved = await api.review(project.id, token);
+      const pending = saved.finals.filter((final) => ["queued", "in_progress"].includes(final.status || ""));
+      if (!pending.length) return saved;
+      await Promise.all(pending.map((final) => api.finalStatus(project.id, final.id, token)));
+      return api.review(project.id, token);
+    },
+    refetchInterval: (query) => query.state.data?.finals.some((final) =>
+      ["queued", "in_progress"].includes(final.status || "")) ? 10000 : 4 * 60 * 1000,
   });
   const jobs = useQuery({
     queryKey: ["generations", token, project.id],
@@ -224,7 +231,7 @@ export function Workspace({
         }}
       >
         <DialogContent
-          className={`max-h-[90vh] overflow-y-auto rounded-md p-6 sm:max-w-4xl ${selectedShot ? "lg:max-w-6xl" : ""}`}
+          className={`max-h-[90vh] overflow-y-auto rounded-md p-6 sm:max-w-4xl ${selectedShot || selected === "final" ? "lg:max-w-6xl" : ""}`}
         >
           <DialogHeader>
             <DialogTitle>
@@ -608,48 +615,12 @@ export function Workspace({
               }
             />
           )}
-          {selected === "final" && state && (
+          {selected === "final" && state && current && (
             <div className="grid gap-5">
-              {state.finals.map((final) => (
-                <section
-                  key={final.id}
-                  className="grid gap-3 rounded-md border p-4"
-                >
-                  <h3 className="font-semibold">
-                    {final.kind === "video" ? "Final Video" : "Final Images"} ·
-                    Brief v{final.brief_version}
-                  </h3>
-                  {current && final.brief_version < current.version && (
-                    <p className="text-sm text-amber-700">
-                      This output belongs to an earlier brief. Review affected
-                      shots before creating a new final.
-                    </p>
-                  )}
-                  {(final.download_url
-                    ? [final.download_url]
-                    : final.outputs
-                  ).map((url) => (
-                    <div key={url} className="grid gap-2">
-                      <MediaPreview url={url} video={final.kind === "video"} />
-                      <a
-                        className="flex items-center gap-2 text-sm underline"
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Download size={16} />
-                        Open / download output
-                      </a>
-                    </div>
-                  ))}
-                  <p className="text-sm text-neutral-500">
-                    {final.job_ids.length} accepted versions, in plan order.
-                  </p>
-                </section>
-              ))}
-              <Button variant="outline" onClick={() => open("storyboard")}>
-                Review {planTitle.toLowerCase()}
-              </Button>
+              <FinalReview projectId={project.id} token={token} finals={state.finals}
+                brief={current} jobs={jobs.data || []} busy={action.isPending || jobs.isPending || jobs.isError}
+                run={run} refresh={refresh} />
+              <Button variant="outline" onClick={() => open("storyboard")}>Review {planTitle.toLowerCase()}</Button>
             </div>
           )}
           {notice && (

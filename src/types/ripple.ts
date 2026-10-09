@@ -101,6 +101,14 @@ export type ProjectReview = {
   finals: FinalOutput[];
 };
 export type FinalOutput = {
+  parent_id?: string;
+  request_key?: string;
+  image_index?: number;
+  prompt?: string;
+  reason?: string;
+  status?: string;
+  accepted?: boolean;
+  created_at?: string;
   id: string;
   brief_version: number;
   kind: "image" | "video";

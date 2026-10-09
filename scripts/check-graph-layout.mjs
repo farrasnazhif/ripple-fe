@@ -171,3 +171,15 @@ assert.deepEqual(
 console.log(
   "Media versions share a node, selective impact is shown, and final outputs connect to their accepted inputs.",
 );
+
+const acceptedFinal = { ...review.finals[0], id: "accepted-final", accepted: true, status: "completed" };
+for (const status of ["queued", "completed", "failed"]) {
+  const candidate = { ...acceptedFinal, id: "candidate", accepted: false, status, outputs: ["https://example.com/refined.png"] };
+  const graph = projectCanvasNodes("", "Brief", 0, "Summary", shots, [old, newer], { ...review, finals: [candidate, acceptedFinal] });
+  assert.equal(graph.at(-1).preview, acceptedFinal.outputs[0], "An unaccepted refinement replaced the final node");
+}
+const refinedFinal = { ...acceptedFinal, parent_id: "source", prompt: "Warmer lighting", outputs: ["https://example.com/refined.png"] };
+const refinedGraph = projectCanvasNodes("", "Brief", 0, "Summary", shots, [old, newer], { ...review, finals: [refinedFinal, { ...acceptedFinal, accepted: false }] });
+assert.equal(refinedGraph.at(-1).preview, refinedFinal.outputs[0]);
+assert.equal(refinedGraph.at(-1).summary, "Warmer lighting");
+console.log("Final refinement candidates stay off the canvas until accepted; accepted revisions preserve provenance.");

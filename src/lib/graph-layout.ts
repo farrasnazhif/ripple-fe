@@ -106,7 +106,7 @@ export function projectCanvasNodes(
       review: needsReview,
     });
   }
-  const final = review?.finals[0];
+  const final = review?.finals.find((output) => output.accepted !== false && (!output.status || output.status === "completed"));
   const finalSelectionChanged = final?.job_ids.some(
     (id) => !jobs.some((job) => job.id === id && job.accepted),
   );
@@ -120,7 +120,7 @@ export function projectCanvasNodes(
         })
         .filter(Boolean),
       title: final.kind === "video" ? "Final Video" : "Final Images",
-      summary: "Accepted outputs in plan order",
+      summary: final.parent_id ? final.prompt || "Refined final output" : "Accepted outputs in plan order",
       status: `Brief v${final.brief_version}${(version && final.brief_version < version) || finalSelectionChanged ? " · Earlier version" : " · Ready"}`,
       x: 1360,
       y: 180,
