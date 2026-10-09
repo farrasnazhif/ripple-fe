@@ -6,6 +6,13 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { BriefAttachmentPreview } from "@/components/brief/brief-attachment-preview";
 import { SelectedBriefFile } from "@/components/project/selected-brief-file";
 import type {
@@ -89,23 +96,39 @@ export function BriefEditor({
     <div className="grid gap-5">
       <div className="flex items-center justify-between gap-2 text-sm">
         <span>Current brief v{brief.version}</span>
-        <label>
-          History{" "}
-          <select
-            className="ml-2 rounded-md border p-2"
-            value={history || ""}
-            onChange={(e) =>
-              setHistory(e.target.value ? Number(e.target.value) : null)
-            }
+        <div className="flex items-center gap-2">
+          <span>History</span>
+          <Select
+            items={[
+              { value: "current", label: "Current editor" },
+              ...review.versions.map((v) => ({
+                value: String(v.version),
+                label: `Brief v${v.version}`,
+              })),
+            ]}
+            value={history === null ? "current" : String(history)}
+            onValueChange={(value) => {
+              if (value !== null)
+                setHistory(value === "current" ? null : Number(value));
+            }}
+            disabled={busy}
           >
-            <option value="">Current editor</option>
-            {review.versions.map((v) => (
-              <option key={v.version} value={v.version}>
-                Brief v{v.version}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger
+              aria-label="Brief version history"
+              className="min-w-36"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="current">Current editor</SelectItem>
+              {review.versions.map((v) => (
+                <SelectItem key={v.version} value={String(v.version)}>
+                  Brief v{v.version}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       {previous ? (
         <section className="grid gap-3 rounded-md border bg-neutral-50 p-4">
@@ -265,26 +288,31 @@ export function BriefEditor({
                     )
                   }
                 />
-                <select
-                  aria-label={`Requirement ${i + 1} scope`}
-                  className="rounded-md border px-2 text-sm"
+                <Select
+                  items={[
+                    { value: "local", label: "Local" },
+                    { value: "global", label: "Global" },
+                  ]}
                   value={point.scope}
-                  onChange={(e) =>
-                    setPoints((v) =>
-                      v.map((p, j) =>
-                        i === j
-                          ? {
-                              ...p,
-                              scope: e.target.value as BriefPoint["scope"],
-                            }
-                          : p,
-                      ),
-                    )
-                  }
+                  onValueChange={(value) => {
+                    if (value === "local" || value === "global")
+                      setPoints((v) =>
+                        v.map((p, j) => (i === j ? { ...p, scope: value } : p)),
+                      );
+                  }}
+                  disabled={busy}
                 >
-                  <option value="local">Local</option>
-                  <option value="global">Global</option>
-                </select>
+                  <SelectTrigger
+                    aria-label={`Requirement ${i + 1} scope`}
+                    className="w-full sm:min-w-24"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="global">Global</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button
                   aria-label={`Remove requirement ${i + 1}`}
                   variant="ghost"
