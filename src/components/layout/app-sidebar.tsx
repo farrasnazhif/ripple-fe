@@ -26,7 +26,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
@@ -52,14 +52,32 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className="py-4 px-2 flex justify-start">
+      <SidebarHeader className="border-b border-sidebar-border p-3">
+        <div className="group/logo flex h-8 items-center">
           <Image
             width={100}
             height={100}
-            alt="Main Logo"
+            alt="Ripple"
             src="/main-logo.png"
+            className="h-auto w-[100px] group-data-[collapsible=icon]:hidden"
           />
+          <SidebarTrigger
+            aria-label="Collapse sidebar"
+            className="ml-auto group-data-[collapsible=icon]:hidden"
+          />
+          <span className="relative hidden size-6 group-data-[collapsible=icon]:block">
+            <Image
+              width={24}
+              height={24}
+              alt="Ripple"
+              src="/icon.png"
+              className="absolute inset-0 size-6 object-contain transition-opacity group-hover/logo:opacity-0 group-focus-within/logo:opacity-0"
+            />
+            <SidebarTrigger
+              aria-label="Expand sidebar"
+              className="absolute inset-0 size-6 opacity-0 transition-opacity group-hover/logo:opacity-100 focus-visible:opacity-100"
+            />
+          </span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -135,7 +153,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

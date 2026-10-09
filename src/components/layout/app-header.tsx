@@ -17,5 +17,5 @@ export function AppHeader() {
     retry: false,
   });
   const title = projectId ? project.data?.name || "Project" : pathname.startsWith("/briefs") ? "Briefs" : "Projects";
-  return <header className="flex h-[58px] shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-5 text-base font-bold"><SidebarTrigger /><span className="truncate">{title}</span></header>;
+  return <header className="flex h-[58px] shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-5 text-base font-bold"><SidebarTrigger className="md:hidden" aria-label="Open sidebar" /><span className="truncate">{title}</span></header>;
 }
