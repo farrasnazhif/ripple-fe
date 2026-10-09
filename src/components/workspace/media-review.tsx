@@ -3,6 +3,13 @@ import { useState } from "react";
 import Image from "next/image";
 import { Check, RefreshCw, SlidersHorizontal, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 import { Textarea } from "@/components/ui/textarea";
 import type {
   Brief,
@@ -175,26 +182,32 @@ export function MediaReview({
             </Button>
           </div>
         )}
-        <details className="text-sm">
-          <summary className="cursor-pointer font-medium">
-            Generation prompt
-          </summary>
-          <p className="mt-2 whitespace-pre-wrap">{job.prompt}</p>
-        </details>
-        <details className="text-sm">
-          <summary className="flex cursor-pointer items-center gap-2 font-medium">
-            <History size={16} />
-            Decision log
-          </summary>
-          {review.decisions
-            .filter((d) => d.shot_id === shot.id)
-            .map((d) => (
-              <p key={d.id} className="mt-2 rounded-md border p-2">
-                Brief v{d.brief_version} · {d.action}:{" "}
-                {d.reason || "Output accepted"}
-              </p>
-            ))}
-        </details>
+        <Accordion multiple>
+          <AccordionItem value="generation-prompt">
+            <AccordionTrigger>Generation prompt</AccordionTrigger>
+            <AccordionContent>
+              <p className="whitespace-pre-wrap">{job.prompt}</p>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="decision-log">
+            <AccordionTrigger>
+              <span className="flex items-center gap-2">
+                <History size={16} />
+                Decision log
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              {review.decisions
+                .filter((d) => d.shot_id === shot.id)
+                .map((d) => (
+                  <p key={d.id} className="mt-2 rounded-md border p-2">
+                    Brief v{d.brief_version} · {d.action}:{" "}
+                    {d.reason || "Output accepted"}
+                  </p>
+                ))}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
       <div className="grid min-w-0 content-start gap-4 md:border-l md:pl-6">
         <div className="overflow-hidden rounded-md border bg-neutral-100">

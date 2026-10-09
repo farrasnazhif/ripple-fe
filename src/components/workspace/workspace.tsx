@@ -17,6 +17,13 @@ import { FinalReview } from "@/components/workspace/final-review";
 import { MediaReview } from "@/components/workspace/media-review";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
@@ -698,20 +705,22 @@ function ShotRequirements({
     ),
   );
   return (
-    <details>
-      <summary className="cursor-pointer text-sm">
-        Edit requirement links
-      </summary>
-      <div className="mt-3 grid gap-3">
-        <RequirementSelection
-          shot={{ requirement_keys: keys }}
-          points={points}
-          onChange={setKeys}
-        />
-        <Button variant="outline" disabled={busy} onClick={() => onSave(keys)}>
-          Save links
-        </Button>
-      </div>
-    </details>
+    <Accordion>
+      <AccordionItem value="requirement-links">
+        <AccordionTrigger>Edit requirement links</AccordionTrigger>
+        <AccordionContent>
+          <div className="grid gap-3">
+            <RequirementSelection
+              shot={{ requirement_keys: keys }}
+              points={points}
+              onChange={setKeys}
+            />
+            <Button variant="outline" disabled={busy} onClick={() => onSave(keys)}>
+              Save links
+            </Button>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
