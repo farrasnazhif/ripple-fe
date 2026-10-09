@@ -118,7 +118,7 @@ export function ProjectList() {
     <div className="min-h-[calc(100vh-58px)] bg-white text-neutral-800">
       <div className="max-w-[1290px] px-6 pt-6 pb-24 sm:px-6 sm:pt-8">
         <Dialog open={creating} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-h-[90vh] w-[calc(100vw-32px)] overflow-y-auto rounded-md p-7 sm:max-w-3xl">
+          <DialogContent className="max-h-[90vh] w-[calc(100vw-32px)] overflow-y-auto rounded-md p-7 sm:max-w-xl">
             <DialogHeader>
               <DialogTitle>New project</DialogTitle>
               <DialogDescription>
@@ -138,8 +138,7 @@ export function ProjectList() {
                 />
               </Label>
               <Label className="grid gap-2 font-semibold">
-                Description{" "}
-                <span className="font-normal text-neutral-500">(optional)</span>
+                Description
                 <Textarea
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
