@@ -182,22 +182,24 @@ export function BriefEditor({
               }
             />
           </label>
-          <ConfirmDestructiveAction
-            title={`Clear ${mode === "brief" ? "brief content" : "summary"}?`}
-            description="This clears the text in your current draft. Saving creates a new version; previous saved versions stay in history."
-            confirmLabel="Clear text"
-            onConfirm={() => (mode === "brief" ? setText("") : setSummary(""))}
-            trigger={
-              <Button
-                variant="destructive"
-                className="justify-self-start"
-                disabled={busy || !(mode === "brief" ? text : summary)}
-              >
-                <Trash2 />
-                Clear {mode === "brief" ? "content" : "summary"}
-              </Button>
-            }
-          />
+          {mode === "summary" && (
+            <ConfirmDestructiveAction
+              title="Clear summary?"
+              description="This clears the text in your current draft. Saving creates a new version; previous saved versions stay in history."
+              confirmLabel="Clear text"
+              onConfirm={() => setSummary("")}
+              trigger={
+                <Button
+                  variant="destructive"
+                  className="justify-self-start"
+                  disabled={busy || !summary}
+                >
+                  <Trash2 />
+                  Clear summary
+                </Button>
+              }
+            />
+          )}
           {mode === "brief" && (
             <section className="grid gap-3">
               <BriefAssetGallery
