@@ -33,11 +33,11 @@ function BudgetForm({ budget, projectId, token }: { budget: ProjectBudget; proje
     {save.error && <p role="alert" className="text-sm text-destructive">{save.error.message}</p>}
   </form>;
 }
-export function ProjectBudgetButton({ projectId, token }: { projectId: string; token: string }) {
+export function ProjectBudgetButton({ projectId, token, iconOnly = false }: { projectId: string; token: string; iconOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const query = useQuery({ queryKey: ["budget", token, projectId], queryFn: () => api.budget(projectId, token), enabled: open, refetchInterval: open ? 10000 : false });
   return <>
-    <Button variant="outline" size="sm" onClick={() => setOpen(true)}><Wallet />Budget</Button>
+    <Button variant="outline" size={iconOnly ? "icon-sm" : "sm"} aria-label="Manage project budget" title="Manage project budget" onClick={() => setOpen(true)}><Wallet />{!iconOnly && "Budget"}</Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto rounded-md sm:max-w-4xl">
       <DialogHeader><DialogTitle>Project generation budget</DialogTitle><DialogDescription>Control media generation spending and review the latest 100 requests. Amounts are USD estimates, not provider invoices.</DialogDescription></DialogHeader>
       {query.isPending ? <p>Loading budget…</p> : query.isError ? <div role="alert"><p>{query.error.message}</p><Button variant="outline" onClick={() => query.refetch()}>Retry</Button></div> : <div className="grid gap-5">

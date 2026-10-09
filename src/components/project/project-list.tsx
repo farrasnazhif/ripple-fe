@@ -240,7 +240,7 @@ export function ProjectList() {
                   {error}
                 </p>
               )}
-              <div className="flex justify-end gap-2">
+              <div className="flex items-center justify-end gap-1.5">
                 <Button
                   type="button"
                   variant="ghost"
@@ -279,12 +279,12 @@ export function ProjectList() {
             <Button onClick={() => setCreating(true)}>Create a project</Button>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-md border">
-            <Table aria-label="Projects">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Description</TableHead>
+          <div className="overflow-hidden rounded-md border border-neutral-200 bg-white shadow-sm">
+            <Table aria-label="Projects" className="min-w-[900px] [&_td]:px-5 [&_td]:py-4 [&_th]:px-5">
+              <TableHeader className="bg-neutral-50 [&_th]:h-11 [&_th]:text-xs [&_th]:font-medium [&_th]:text-neutral-500">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[25%]">Title</TableHead>
+                  <TableHead className="w-[35%]">Description</TableHead>
                   <TableHead>Created by</TableHead>
                   <TableHead>Created at</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -292,27 +292,32 @@ export function ProjectList() {
               </TableHeader>
               <TableBody>
                 {projects.data.map((project) => (
-                  <TableRow key={project.id}>
+                  <TableRow key={project.id} className="border-neutral-100 hover:bg-neutral-50/70">
                     <TableCell className="font-medium">
                       <Link
                         href={`/project/${project.id}`}
                         title={project.name}
-                        className="block max-w-64 truncate text-primary hover:underline"
+                        className="block max-w-64 truncate font-medium text-neutral-900 transition-colors hover:text-emerald-700 hover:underline focus-visible:rounded-md focus-visible:outline-emerald-500"
                       >
                         {project.name}
                       </Link>
                     </TableCell>
                     <TableCell>
                       <p
-                        className="line-clamp-2 max-w-96 min-w-40 whitespace-normal text-muted-foreground"
+                        className="line-clamp-2 max-w-96 min-w-40 whitespace-normal text-xs leading-5 text-neutral-500"
                         title={project.description}
                       >
                         {project.description || "No description"}
                       </p>
                     </TableCell>
-                    <TableCell>{project.created_by}</TableCell>
+                    <TableCell>
+                      <span className="block max-w-40 truncate text-xs text-neutral-600" title={project.created_by}>
+                        {project.created_by}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <time
+                        className="text-xs tabular-nums text-neutral-500"
                         dateTime={project.created_at}
                         title={new Date(project.created_at).toLocaleString(
                           "en-US",
@@ -325,16 +330,16 @@ export function ProjectList() {
                       </time>
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-2">
-                        <ProjectBudgetButton projectId={project.id} token={token!} />
+                      <div className="flex items-center justify-end gap-1.5">
+                        <ProjectBudgetButton projectId={project.id} token={token!} iconOnly />
                         <Button
-                          size="sm"
+                          size="icon-sm"
                           variant="outline"
+                          title="Edit project"
                           aria-label={`Edit ${project.name}`}
                           onClick={() => setEditing(project)}
                         >
                           <Pencil />
-                          Edit
                         </Button>
                         <ConfirmDestructiveAction
                           title={`Delete “${project.name}”?`}
@@ -342,12 +347,12 @@ export function ProjectList() {
                           confirmLabel="Delete project"
                           trigger={
                             <Button
-                              size="sm"
+                              size="icon-sm"
                               variant="destructive"
+                              title="Delete project"
                               aria-label={`Delete ${project.name}`}
                             >
                               <Trash2 />
-                              Delete
                             </Button>
                           }
                           onConfirm={async () => {
