@@ -229,6 +229,8 @@ export function Workspace({
   return (
     <div className="relative flex h-[calc(100dvh-58px)] min-h-0 flex-col overflow-hidden">
       <GraphCanvas
+        key={project.id}
+        projectId={project.id}
         projectName={project.name}
         description={project.description}
         rawText={current?.raw_text || ""}

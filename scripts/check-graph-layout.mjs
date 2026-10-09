@@ -203,3 +203,15 @@ for (const legacyShots of [[], shots]) {
   assert.equal(acceptedGraph.at(-1).preview, accepted.outputs[0]);
 }
 console.log("Images go directly from summary to final output, with no plan or shot nodes; video keeps its storyboard.");
+
+const { parseCanvasPositions } = await import("../src/lib/canvas-positions.ts");
+const draggedPositions = { brief: { x: 420, y: -35 }, summary: { x: 800, y: 120 } };
+assert.deepEqual(parseCanvasPositions(JSON.stringify(draggedPositions)), draggedPositions);
+for (const saved of [null, "invalid", "[]", "null", '{"brief":{"x":"40","y":10}}', '{"brief":{"x":1e400,"y":10}}']) {
+  assert.deepEqual(parseCanvasPositions(saved), {});
+}
+assert.deepEqual(
+  parseCanvasPositions('{"brief":{"x":40,"y":10},"summary":null}'),
+  { brief: { x: 40, y: 10 } },
+);
+console.log("Saved node positions round-trip safely; invalid stored coordinates are ignored.");

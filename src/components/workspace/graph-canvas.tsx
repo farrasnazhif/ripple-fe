@@ -11,6 +11,7 @@ import {
   type CanvasItem,
 } from "@/lib/graph-layout";
 import { zoomCanvasAt } from "@/lib/canvas-viewport";
+import { parseCanvasPositions, type CanvasPositions } from "@/lib/canvas-positions";
 
 import type {
   StoryboardShot,
@@ -30,6 +31,7 @@ type Drag = {
 };
 
 export function GraphCanvas({
+  projectId,
   projectName,
   description,
   rawText,
@@ -40,6 +42,7 @@ export function GraphCanvas({
   review,
   onSelect,
 }: {
+  projectId: string;
   projectName: string;
   description: string;
   rawText: string;
@@ -54,11 +57,11 @@ export function GraphCanvas({
   const drag = useRef<Drag | null>(null);
   const suppressClick = useRef(false);
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
-  const [positions, setPositions] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
+  const [positions, setPositions] = useState<CanvasPositions>({});
+  const savedPositions = useRef<CanvasPositions>({});
+  const [storageError, setStorageError] = useState("");
+  const storageKey = `ripple:canvas-positions:${projectId}`;
   const [dragging, setDragging] = useState(false);
-  // shortcut: node positions stay in this mounted canvas, persist them when project graphs are stored.
   const initialItems = projectCanvasNodes(
     description,
     rawText,
@@ -77,6 +80,21 @@ export function GraphCanvas({
     1300,
     ...items.map((item) => item.x + nodeWidth + 100),
   );
+
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      try {
+        const restored = parseCanvasPositions(localStorage.getItem(storageKey));
+        savedPositions.current = restored;
+        setPositions(restored);
+      } catch {
+        setStorageError("Browser storage is unavailable. Node positions cannot be saved.");
+      }
+    });
+    return () => { active = false; };
+  }, [storageKey]);
 
   useEffect(() => {
     const canvas = element.current;
@@ -130,13 +148,15 @@ export function GraphCanvas({
     if (Math.hypot(dx, dy) > 4) current.moved = true;
     if (!current.moved) return;
     if (current.id) {
-      setPositions((saved) => ({
-        ...saved,
-        [current.id!]: {
+      const next = {
+        ...savedPositions.current,
+        [current.id]: {
           x: current.x + dx / current.zoom,
           y: current.y + dy / current.zoom,
         },
-      }));
+      };
+      savedPositions.current = next;
+      setPositions(next);
     } else {
       setViewport((saved) => ({
         ...saved,
@@ -149,6 +169,14 @@ export function GraphCanvas({
   function stop(event: PointerEvent<HTMLElement>) {
     if (drag.current?.pointerId !== event.pointerId) return;
     suppressClick.current = drag.current.moved;
+    if (drag.current.id && drag.current.moved) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(savedPositions.current));
+        setStorageError("");
+      } catch {
+        setStorageError("Node positions could not be saved in this browser.");
+      }
+    }
     drag.current = null;
     setDragging(false);
   }
@@ -288,6 +316,11 @@ export function GraphCanvas({
           </svg>
         </div>
       </div>
+      {storageError && (
+        <p role="status" className="absolute bottom-20 left-4 rounded-md border bg-white p-3 text-xs text-red-600">
+          {storageError}
+        </p>
+      )}
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs shadow-lg">
         <Button
           type="button"
