@@ -1,5 +1,15 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import type { Attachment, Brief, Graph, Project, StoryboardShot, GenerationJob } from "@/types/ripple";
+import type {
+  Attachment,
+  Brief,
+  Graph,
+  Project,
+  StoryboardShot,
+  GenerationJob,
+  ProjectReview,
+  BriefEdit,
+  FinalOutput,
+} from "@/types/ripple";
 
 const client = axios.create({
   baseURL: (
@@ -44,18 +54,96 @@ async function request<T>(
 }
 
 export const api = {
-  setBriefText: (id: string, raw_text: string, token: string) => request<null>(`/briefs/${id}/text`, { method: "PUT", data: { raw_text } }, token),
-  storyboard: (id: string, token: string) => request<StoryboardShot[]>(`/projects/${id}/storyboard`, {}, token),
-  saveStoryboard: (id: string, summary: string, shots: {title: string; prompt: string}[], token: string) => request<null>(`/projects/${id}/storyboard`, {method: "POST", data: {summary, shots}}, token),
-  generations: (id: string, token: string) => request<GenerationJob[]>(`/projects/${id}/generations`, {}, token),
-  generate: (id: string, shot: string, kind: "image" | "video", request_key: string, token: string) => request<GenerationJob>(`/projects/${id}/shots/${shot}/generations`, {method: "POST", data: {kind, request_key}}, token),
-  generation: (id: string, job: string, token: string) => request<GenerationJob>(`/projects/${id}/generations/${job}`, {}, token),
-  graph: (scenario: string, token: string) =>
-    request<Graph>(
-      "/demo/graph",
-      { params: { scenario } },
+  review: (id: string, token: string) =>
+    request<ProjectReview>(`/projects/${id}/review`, {}, token),
+  editBrief: (id: string, data: BriefEdit, token: string) =>
+    request<null>(`/projects/${id}/brief`, { method: "PUT", data }, token),
+  outputType: (id: string, kind: "image" | "video", token: string) =>
+    request<null>(
+      `/projects/${id}/output-type`,
+      { method: "PUT", data: { kind } },
       token,
     ),
+  draftPlan: (id: string, summary: string, token: string) =>
+    request<StoryboardShot[]>(
+      `/projects/${id}/plan/draft`,
+      { method: "POST", data: { summary } },
+      token,
+    ),
+  refineSummary: (
+    id: string,
+    summary: string,
+    instructions: string,
+    token: string,
+  ) =>
+    request<{ summary: string }>(
+      `/projects/${id}/summary/refine`,
+      { method: "POST", data: { summary, instructions } },
+      token,
+    ),
+  linkRequirements: (id: string, shot: string, keys: string[], token: string) =>
+    request<null>(
+      `/projects/${id}/shots/${shot}/requirements`,
+      { method: "PUT", data: { keys } },
+      token,
+    ),
+  decide: (
+    id: string,
+    shot: string,
+    job_id: string,
+    action: "accept" | "keep" | "refine",
+    reason: string,
+    token: string,
+  ) =>
+    request<null>(
+      `/projects/${id}/shots/${shot}/decisions`,
+      { method: "POST", data: { job_id, action, reason } },
+      token,
+    ),
+  final: (id: string, kind: "image" | "video", token: string) =>
+    request<FinalOutput>(
+      `/projects/${id}/final`,
+      { method: "POST", data: { kind } },
+      token,
+    ),
+  setBriefText: (id: string, raw_text: string, token: string) =>
+    request<null>(
+      `/briefs/${id}/text`,
+      { method: "PUT", data: { raw_text } },
+      token,
+    ),
+  storyboard: (id: string, token: string) =>
+    request<StoryboardShot[]>(`/projects/${id}/storyboard`, {}, token),
+  saveStoryboard: (
+    id: string,
+    summary: string,
+    shots: { title: string; prompt: string }[],
+    token: string,
+  ) =>
+    request<null>(
+      `/projects/${id}/storyboard`,
+      { method: "POST", data: { summary, shots } },
+      token,
+    ),
+  generations: (id: string, token: string) =>
+    request<GenerationJob[]>(`/projects/${id}/generations`, {}, token),
+  generate: (
+    id: string,
+    shot: string,
+    kind: "image" | "video",
+    request_key: string,
+    token: string,
+    prompt?: string,
+  ) =>
+    request<GenerationJob>(
+      `/projects/${id}/shots/${shot}/generations`,
+      { method: "POST", data: { kind, request_key, prompt } },
+      token,
+    ),
+  generation: (id: string, job: string, token: string) =>
+    request<GenerationJob>(`/projects/${id}/generations/${job}`, {}, token),
+  graph: (scenario: string, token: string) =>
+    request<Graph>("/demo/graph", { params: { scenario } }, token),
   login: (email: string, password: string) =>
     request<{ token: string }>("/auth/login", {
       method: "POST",
@@ -66,7 +154,12 @@ export const api = {
       method: "POST",
       data: { username, email, password },
     }),
-  me: (token: string) => request<{ id: string; username: string; email: string }>("/users/me", {}, token),
+  me: (token: string) =>
+    request<{ id: string; username: string; email: string }>(
+      "/users/me",
+      {},
+      token,
+    ),
   projects: (token: string) => request<Project[]>("/projects", {}, token),
   project: (id: string, token: string) =>
     request<Project>(`/projects/${id}`, {}, token),

@@ -279,7 +279,7 @@ export function ProjectList() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <FileText className="size-4 shrink-0 text-neutral-400" />
+                    {/* <FileText className="size-4 shrink-0 text-neutral-400" /> */}
 
                     <p className="line-clamp-2 text-sm leading-relaxed text-neutral-500">
                       {project.description ||

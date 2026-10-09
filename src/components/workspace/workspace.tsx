@@ -1,11 +1,19 @@
 "use client";
-
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Sparkles, ImageIcon, Video } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Sparkles,
+  ImageIcon,
+  Video,
+  Check,
+  Download,
+  ArrowRight,
+} from "lucide-react";
 import { GraphCanvas } from "@/components/workspace/graph-canvas";
-import { BriefAttachmentPreview } from "@/components/brief/brief-attachment-preview";
+import { BriefEditor } from "@/components/workspace/brief-editor";
+import { MediaReview, MediaPreview } from "@/components/workspace/media-review";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,8 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Project, GenerationJob } from "@/types/ripple";
-
+import type { Project, StoryboardShot, GenerationJob } from "@/types/ripple";
+type PlanRow = { title: string; prompt: string; requirement_keys: string[] };
 export function Workspace({
   project,
   token,
@@ -28,17 +36,14 @@ export function Workspace({
 }) {
   const cache = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
-  const [source, setSource] = useState(project.description);
-  const [draft, setDraft] = useState("");
-  const [reviewingSummary, setReviewingSummary] = useState(false);
-  const [rows, setRows] = useState([{ title: "", prompt: "" }]);
-  const [creatingStoryboard, setCreatingStoryboard] = useState(false);
-  const submitting = useRef(false);
-  const briefKey = ["brief", token, project.brief_id];
-  const shotKey = ["storyboard", token, project.id];
-  const jobKey = ["generations", token, project.id];
+  const [planning, setPlanning] = useState(false);
+  const [rows, setRows] = useState<PlanRow[]>([
+    { title: "", prompt: "", requirement_keys: [] },
+  ]);
+  const [notice, setNotice] = useState("");
+  const running = useRef(false);
   const brief = useQuery({
-    queryKey: briefKey,
+    queryKey: ["brief", token, project.brief_id],
     queryFn: () => api.getBrief(project.brief_id, token),
   });
   const attachments = useQuery({
@@ -46,304 +51,304 @@ export function Workspace({
     queryFn: () => api.attachments(project.brief_id, token),
   });
   const shots = useQuery({
-    queryKey: shotKey,
+    queryKey: ["storyboard", token, project.id],
     queryFn: () => api.storyboard(project.id, token),
   });
+  const review = useQuery({
+    queryKey: ["review", token, project.id],
+    queryFn: () => api.review(project.id, token),
+    refetchInterval: 4 * 60 * 1000,
+  });
   const jobs = useQuery({
-    queryKey: jobKey,
+    queryKey: ["generations", token, project.id],
     queryFn: async () => {
       const saved = await api.generations(project.id, token);
-      // Status reads resume after refresh; submission is only triggered by an explicit click.
       return Promise.all(
-        saved.map((job) =>
-          ["queued", "in_progress"].includes(job.status)
-            ? api.generation(project.id, job.id, token)
-            : job,
+        saved.map((j) =>
+          ["queued", "in_progress"].includes(j.status)
+            ? api.generation(project.id, j.id, token)
+            : j,
         ),
       );
     },
-    refetchInterval: (query) =>
-      query.state.data?.some((j) =>
+    refetchInterval: (q) =>
+      q.state.data?.some((j) =>
         ["queued", "in_progress", "submitting"].includes(j.status),
       )
         ? 10000
         : false,
   });
-  const summary = useMutation({
-    mutationFn: async () => {
-      if (!brief.data?.raw_text && source.trim())
-        await api.setBriefText(project.brief_id, source, token);
-      await cache.invalidateQueries({ queryKey: briefKey });
-      const result = await api.draftSummary(project.brief_id, token);
-      setDraft(result.summary);
-      setReviewingSummary(true);
+  async function refresh() {
+    await Promise.all(
+      ["brief", "attachments", "storyboard", "generations", "review"].map(
+        (key) => cache.invalidateQueries({ queryKey: [key, token] }),
+      ),
+    );
+  }
+  const action = useMutation({
+    mutationFn: async (fn: () => Promise<void>) => {
+      setNotice("");
+      await fn();
     },
-  });
-  const confirm = useMutation({
-    mutationFn: async () => {
-      if (!brief.data?.raw_text && source.trim())
-        await api.setBriefText(project.brief_id, source, token);
-      return api.confirmSummary(project.brief_id, draft, token);
-    },
-    onSuccess: async () => {
-      await cache.invalidateQueries({ queryKey: briefKey });
-      setDraft("");
-      setReviewingSummary(false);
-      setSelected("summary");
-    },
-  });
-  const save = useMutation({
-    mutationFn: () =>
-      api.saveStoryboard(project.id, brief.data?.summary || "", rows, token),
-    onSuccess: async () => {
-      await cache.invalidateQueries({ queryKey: shotKey });
-      setCreatingStoryboard(false);
-      setSelected("storyboard");
-    },
-  });
-  const generation = useMutation({
-    mutationFn: async ({
-      shot,
-      kind,
-    }: {
-      shot: string;
-      kind: "image" | "video";
-    }) => {
-      const storageKey = `ripple-generation:${project.id}:${shot}:${kind}`;
-      const requestKey =
-        sessionStorage.getItem(storageKey) || crypto.randomUUID();
-      sessionStorage.setItem(storageKey, requestKey);
-      const job = await api.generate(project.id, shot, kind, requestKey, token);
-      sessionStorage.removeItem(storageKey);
-      return job;
-    },
-    onSuccess: async () => {
-      await cache.invalidateQueries({ queryKey: jobKey });
-    },
+    onSuccess: refresh,
     onSettled: () => {
-      submitting.current = false;
+      running.current = false;
     },
   });
-  const selectedJob = jobs.data?.find((j) => j.id === selected);
-  const title = creatingStoryboard
-    ? "Create storyboard"
-    : selected === "brief"
-      ? "Raw Brief"
-      : selected === "summary"
-        ? "Brief Summary"
-        : selected === "storyboard"
-          ? "Storyboard"
-          : selectedJob
-            ? `${selectedJob.kind === "video" ? "Video" : "Image"} output`
-            : "Project output";
-  const error =
-    summary.error || confirm.error || save.error || generation.error;
+  function run(fn: () => Promise<void>) {
+    if (running.current) return;
+    running.current = true;
+    action.reset();
+    action.mutate(fn);
+  }
   function open(id: string) {
     setSelected(id);
-    setCreatingStoryboard(false);
-    summary.reset();
-    confirm.reset();
-    save.reset();
-    generation.reset();
+    setPlanning(false);
+    setNotice("");
+    action.reset();
   }
-  function generate(shot: string, kind: "image" | "video") {
-    if (submitting.current) return;
-    submitting.current = true;
-    generation.mutate({ shot, kind });
-  }
-  function blocked(shot: string, kind: string) {
+  const state = review.data;
+  const current = brief.data;
+  const kind = state?.output_type === "image" ? "image" : "video";
+  const planTitle = kind === "image" ? "Image Plan" : "Storyboard";
+  const parts = selected?.split(":");
+  const selectedShot = shots.data?.find((s) => s.id === parts?.[0]);
+  const selectedKind = parts?.[1] as "image" | "video" | undefined;
+  const versions =
+    jobs.data?.filter(
+      (j) =>
+        j.shot_id === selectedShot?.id &&
+        j.kind === selectedKind &&
+        j.status === "completed" &&
+        j.outputs.length,
+    ) || [];
+  function blocked(shot: string, output: string) {
     return (
       jobs.isPending ||
       jobs.isError ||
-      generation.isPending ||
-      jobs.data?.some(
+      action.isPending ||
+      !!jobs.data?.some(
         (j) =>
           j.shot_id === shot &&
-          j.kind === kind &&
+          j.kind === output &&
           ["submitting", "unknown", "queued", "in_progress"].includes(j.status),
       )
     );
   }
+  async function generate(
+    shot: string,
+    output: "image" | "video",
+    prompt: string,
+    reason?: string,
+  ) {
+    if (reason) await api.decide(project.id, shot, "", "refine", reason, token);
+    const storageKey = `ripple-generation:${project.id}:${shot}:${output}`;
+    let requestKey = sessionStorage.getItem(storageKey);
+    if (!requestKey) {
+      requestKey = crypto.randomUUID();
+      sessionStorage.setItem(storageKey, requestKey);
+      sessionStorage.setItem(`${storageKey}:prompt`, prompt);
+    }
+    const savedPrompt =
+      sessionStorage.getItem(`${storageKey}:prompt`) || prompt;
+    const job = await api.generate(
+      project.id,
+      shot,
+      output,
+      requestKey,
+      token,
+      savedPrompt,
+    );
+    sessionStorage.removeItem(storageKey);
+    sessionStorage.removeItem(`${storageKey}:prompt`);
+    setNotice(
+      `Generation ${job.status.replaceAll("_", " ")}. Completed media will appear on the canvas.`,
+    );
+  }
+  async function decide(
+    job: GenerationJob,
+    decision: "accept" | "keep",
+    reason: string,
+  ) {
+    await api.decide(project.id, job.shot_id, job.id, decision, reason, token);
+    setNotice(
+      decision === "keep"
+        ? "Version kept. Your reason was recorded."
+        : "Version accepted.",
+    );
+  }
+  const error =
+    action.error ||
+    brief.error ||
+    attachments.error ||
+    shots.error ||
+    review.error ||
+    jobs.error;
   return (
     <div className="flex h-[calc(100dvh-58px)] min-h-0 flex-col overflow-hidden">
       <GraphCanvas
         projectName={project.name}
         description={project.description}
-        rawText={brief.data?.raw_text || ""}
-        summary={brief.data?.summary}
+        rawText={current?.raw_text || ""}
+        summary={current?.summary}
         fileCount={attachments.data?.length || 0}
         shots={shots.data}
         jobs={jobs.data}
+        review={state}
         onSelect={open}
       />
+      {error && !selected && (
+        <div
+          role="alert"
+          className="absolute bottom-20 left-8 rounded-md border bg-white p-3 text-sm text-red-600"
+        >
+          {error.message}
+          <Button variant="link" onClick={() => run(refresh)}>
+            Reload
+          </Button>
+        </div>
+      )}
       <Dialog
         open={!!selected}
         onOpenChange={(value) => {
-          if (!value) setSelected(null);
+          if (!value && !action.isPending) {
+            setSelected(null);
+            setPlanning(false);
+          }
         }}
       >
-        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-md p-7 sm:max-w-xl">
+        <DialogContent
+          className={`max-h-[90vh] overflow-y-auto rounded-md p-6 sm:max-w-4xl ${selectedShot ? "lg:max-w-6xl" : ""}`}
+        >
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle>
               {selected === "brief"
-                ? "Review the original source and confirm a summary to continue."
-                : "Review this stage before continuing your project."}
+                ? "Brief"
+                : selected === "summary"
+                  ? "Brief Summary"
+                  : selected === "storyboard"
+                    ? planTitle
+                    : selected === "final"
+                      ? "Final Output"
+                      : selectedShot
+                        ? `${selectedKind === "video" ? "Clip" : "Image"} ${selectedShot.position} · ${selectedShot.title}`
+                        : "Project"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedShot
+                ? "Review saved versions, refine the output, and record your decision."
+                : "Confirm your brief, track changes, and preserve the work that still fits."}
             </DialogDescription>
           </DialogHeader>
-          {selected === "brief" && (
-            <div className="grid gap-4">
-              <h3 className="font-semibold">Content</h3>
-              {brief.isPending ? (
-                <p>Loading content…</p>
-              ) : brief.isError ? (
-                <p role="alert">{brief.error.message}</p>
-              ) : brief.data.raw_text ? (
-                <p className="rounded-md border bg-neutral-50 p-4 whitespace-pre-wrap">
-                  {brief.data.raw_text}
-                </p>
-              ) : (
-                <label className="grid gap-2 text-sm">
-                  Brief text
-                  <Textarea
-                    value={source}
-                    maxLength={100000}
-                    onChange={(e) => setSource(e.target.value)}
-                    placeholder="Paste the brief content here"
-                    className="min-h-36"
-                  />
-                  <span className="text-xs text-neutral-500">
-                    The original text is saved when you generate a summary.
-                    Summary uses saved text and attached PNG, JPEG, WEBP, GIF or
-                    PDF files. Other formats remain downloadable references.
-                  </span>
-                </label>
-              )}
-              <h3 className="font-semibold">Uploaded files</h3>
-              {attachments.isPending ? (
-                <p>Loading files…</p>
-              ) : attachments.isError ? (
-                <p role="alert">{attachments.error.message}</p>
-              ) : attachments.data.length ? (
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {attachments.data.map((file) => (
-                    <BriefAttachmentPreview
-                      key={file.id}
-                      file={file}
-                      token={token}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-neutral-500">No files uploaded.</p>
-              )}
-              {!shots.data?.length && (
-                <Button
-                  disabled={
-                    brief.isPending ||
-                    brief.isError ||
-                    summary.isPending ||
-                    confirm.isPending ||
-                    !(
-                      brief.data?.raw_text ||
-                      source.trim() ||
-                      attachments.data?.some((f) =>
-                        [
-                          "image/png",
-                          "image/jpeg",
-                          "image/webp",
-                          "image/gif",
-                          "application/pdf",
-                        ].includes(f.content_type),
-                      )
-                    )
+          {(!current || !state) && <p>Loading project…</p>}
+          {current &&
+            state &&
+            (selected === "brief" || selected === "summary") &&
+            !planning && (
+              <>
+                <BriefEditor
+                  key={selected}
+                  mode={selected}
+                  brief={current}
+                  project={project}
+                  review={state}
+                  attachments={attachments.data || []}
+                  token={token}
+                  busy={action.isPending}
+                  run={run}
+                  refresh={refresh}
+                  onConfirmed={() =>
+                    setNotice("Summary confirmed. Choose image or video below.")
                   }
-                  onClick={() => summary.mutate()}
-                >
-                  <Sparkles />
-                  {summary.isPending
-                    ? "Generating summary…"
-                    : "Generate summary"}
-                </Button>
-              )}
-              {!shots.data?.length && (
-                <Button
-                  variant="outline"
-                  disabled={
-                    brief.isPending ||
-                    brief.isError ||
-                    summary.isPending ||
-                    confirm.isPending
-                  }
-                  onClick={() => {
-                    setDraft(brief.data?.summary || "");
-                    setReviewingSummary(true);
-                  }}
-                >
-                  Write summary manually
-                </Button>
-              )}
-              {reviewingSummary && (
-                <label className="grid gap-2 text-sm">
-                  Review summary
-                  <Textarea
-                    className="min-h-48"
-                    value={draft}
-                    maxLength={100000}
-                    onChange={(e) => setDraft(e.target.value)}
-                  />
-                  <Button
-                    disabled={confirm.isPending || !draft.trim()}
-                    onClick={() => confirm.mutate()}
-                  >
-                    {confirm.isPending ? "Saving…" : "Confirm summary"}
-                  </Button>
-                </label>
-              )}
-            </div>
-          )}
-          {selected === "summary" && !creatingStoryboard && (
+                />
+                {selected === "summary" && current.summary && (
+                  <section className="mt-4 grid gap-3 border-t pt-5">
+                    <h3 className="font-semibold">
+                      What would you like to generate?
+                    </h3>
+                    {shots.data?.length ? (
+                      <Button onClick={() => open("storyboard")}>
+                        Open {planTitle.toLowerCase()}
+                      </Button>
+                    ) : (
+                      <div className="flex flex-wrap gap-3">
+                        {(["image", "video"] as const).map((output) => (
+                          <Button
+                            key={output}
+                            variant="outline"
+                            disabled={
+                              action.isPending ||
+                              shots.isPending ||
+                              shots.isError
+                            }
+                            onClick={() =>
+                              run(async () => {
+                                await api.outputType(project.id, output, token);
+                                await refresh();
+                                setPlanning(true);
+                              })
+                            }
+                          >
+                            {output === "image" ? <ImageIcon /> : <Video />}
+                            {output === "image"
+                              ? "Images · Create image plan"
+                              : "Video · Create storyboard"}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )}
+              </>
+            )}
+          {planning && state && current && (
             <div className="grid gap-4">
-              <p className="whitespace-pre-wrap">{brief.data?.summary}</p>
-              {shots.isPending ? (
-                <p>Loading storyboard…</p>
-              ) : shots.isError ? (
-                <p role="alert">{shots.error.message}</p>
-              ) : (
-                <Button
-                  onClick={() =>
-                    shots.data.length
-                      ? setSelected("storyboard")
-                      : setCreatingStoryboard(true)
-                  }
-                >
-                  {shots.data.length ? "Open storyboard" : "Create storyboard"}
-                </Button>
-              )}
-            </div>
-          )}
-          {creatingStoryboard && (
-            <div className="grid gap-4">
+              <h3 className="font-semibold">
+                Create {planTitle.toLowerCase()}
+              </h3>
               <p className="text-sm text-neutral-500">
-                Add the shots from your storyboard. Each prompt is sent to
-                Higgsfield when you choose to generate it. Saved shots preserve
-                this version of the storyboard.
+                Review prompts and link local requirements before saving. Global
+                requirements automatically apply to all shots.
               </p>
-              {rows.map((row, index) => (
-                <fieldset
-                  key={index}
-                  className="grid gap-3 rounded-md border p-4"
-                >
-                  <legend className="px-1 text-sm">Shot {index + 1}</legend>
+              <Button
+                variant="outline"
+                disabled={action.isPending}
+                onClick={() =>
+                  run(async () => {
+                    const drafted = await api.draftPlan(
+                      project.id,
+                      current.summary || "",
+                      token,
+                    );
+                    setRows(
+                      drafted.map((s) => ({
+                        title: s.title,
+                        prompt: s.prompt,
+                        requirement_keys: state.points
+                          .filter((p) => p.scope === "local")
+                          .map((p) => p.key),
+                      })),
+                    );
+                  })
+                }
+              >
+                <Sparkles />
+                Draft {planTitle.toLowerCase()} with ChatGPT
+              </Button>
+              {rows.map((row, i) => (
+                <fieldset key={i} className="grid gap-3 rounded-md border p-4">
+                  <legend className="px-1 text-sm">
+                    {kind === "image" ? "Image" : "Shot"} {i + 1}
+                  </legend>
                   <label className="grid gap-1 text-sm">
                     Title
                     <Input
                       value={row.title}
                       maxLength={200}
                       onChange={(e) =>
-                        setRows((current) =>
-                          current.map((r, i) =>
-                            i === index ? { ...r, title: e.target.value } : r,
+                        setRows((v) =>
+                          v.map((r, j) =>
+                            i === j ? { ...r, title: e.target.value } : r,
                           ),
                         )
                       }
@@ -355,67 +360,113 @@ export function Workspace({
                       value={row.prompt}
                       maxLength={10000}
                       onChange={(e) =>
-                        setRows((current) =>
-                          current.map((r, i) =>
-                            i === index ? { ...r, prompt: e.target.value } : r,
+                        setRows((v) =>
+                          v.map((r, j) =>
+                            i === j ? { ...r, prompt: e.target.value } : r,
                           ),
                         )
                       }
                     />
                   </label>
-                  <Button
-                    variant="ghost"
-                    disabled={rows.length === 1 || save.isPending}
-                    onClick={() =>
-                      setRows((current) =>
-                        current.filter((_, i) => i !== index),
+                  <RequirementSelection
+                    shot={row}
+                    points={state.points}
+                    onChange={(keys) =>
+                      setRows((v) =>
+                        v.map((r, j) =>
+                          i === j ? { ...r, requirement_keys: keys } : r,
+                        ),
                       )
                     }
+                  />
+                  <Button
+                    variant="ghost"
+                    disabled={rows.length === 1 || action.isPending}
+                    onClick={() => setRows((v) => v.filter((_, j) => i !== j))}
                   >
                     <Trash2 />
-                    Remove shot
+                    Remove
                   </Button>
                 </fieldset>
               ))}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  disabled={rows.length >= 50 || save.isPending}
+                  disabled={action.isPending || rows.length >= 50}
                   onClick={() =>
-                    setRows((current) => [
-                      ...current,
-                      { title: "", prompt: "" },
+                    setRows((v) => [
+                      ...v,
+                      { title: "", prompt: "", requirement_keys: [] },
                     ])
                   }
                 >
                   <Plus />
-                  Add shot
+                  Add {kind === "image" ? "image" : "shot"}
                 </Button>
                 <Button
                   disabled={
-                    save.isPending ||
+                    action.isPending ||
                     rows.some((r) => !r.title.trim() || !r.prompt.trim())
                   }
-                  onClick={() => save.mutate()}
+                  onClick={() =>
+                    run(async () => {
+                      await api.saveStoryboard(
+                        project.id,
+                        current.summary || "",
+                        rows,
+                        token,
+                      );
+                      setPlanning(false);
+                      setSelected("storyboard");
+                    })
+                  }
                 >
-                  {save.isPending ? "Saving…" : "Save storyboard"}
+                  Save {planTitle.toLowerCase()}
                 </Button>
               </div>
             </div>
           )}
-          {selected === "storyboard" && (
-            <div className="grid gap-4">
+          {selected === "storyboard" && state && (
+            <div className="grid gap-5">
               <p className="text-sm text-neutral-500">
-                Generating an image or video submits a paid request to
-                Higgsfield.
+                Generate the outputs you need. Each request is sent to
+                Higgsfield. Only completed outputs become canvas nodes.
               </p>
-              {jobs.isError && (
-                <p role="alert">
-                  Could not load generation history: {jobs.error.message}
-                  <Button variant="outline" onClick={() => jobs.refetch()}>
-                    Retry
-                  </Button>
-                </p>
+              {state.changes.length > 0 && (
+                <section className="grid gap-3 rounded-md border bg-neutral-50 p-4">
+                  <h3 className="font-semibold">Change impact tracking</h3>
+                  {state.changes.slice(0, 5).map((change) => (
+                    <div key={change.id} className="grid gap-2 text-sm">
+                      <strong>
+                        Brief v{change.brief_version} · {change.note}
+                      </strong>
+                      {change.diffs.map((d) => (
+                        <p key={d.key}>
+                          {d.key}: {d.old || "Added"}{" "}
+                          <ArrowRight className="inline size-3" />{" "}
+                          {d.new || "Deleted"}
+                        </p>
+                      ))}
+                      {change.impacts.map((i) => (
+                        <div
+                          key={i.shot_id}
+                          className={`rounded-md p-2 ${i.status === "needs_review" ? "bg-amber-100" : "bg-emerald-50"}`}
+                        >
+                          <p>
+                            {shots.data?.find((s) => s.id === i.shot_id)?.title}{" "}
+                            ·{" "}
+                            {i.status === "needs_review"
+                              ? "Needs review"
+                              : "Unchanged"}
+                          </p>
+                          {i.reasons.map((r) => (
+                            <p key={r}>{r}</p>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </section>
               )}
               {shots.data?.map((shot) => (
                 <section
@@ -425,53 +476,173 @@ export function Workspace({
                   <h3 className="font-semibold">
                     {shot.position}. {shot.title}
                   </h3>
-                  <p className="text-sm whitespace-pre-wrap">{shot.prompt}</p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={blocked(shot.id, "image")}
-                      onClick={() => generate(shot.id, "image")}
-                    >
-                      <ImageIcon />
-                      Generate image
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={blocked(shot.id, "video")}
-                      onClick={() => generate(shot.id, "video")}
-                    >
-                      <Video />
-                      Generate video
-                    </Button>
+                  <p className="whitespace-pre-wrap text-sm">{shot.prompt}</p>
+                  <ShotRequirements
+                    key={`${shot.id}:${shot.requirement_keys.join()}`}
+                    shot={shot}
+                    points={state.points}
+                    busy={action.isPending}
+                    onSave={(keys) =>
+                      run(async () => {
+                        await api.linkRequirements(
+                          project.id,
+                          shot.id,
+                          keys,
+                          token,
+                        );
+                      })
+                    }
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {(state.output_type === "mixed"
+                      ? ["image", "video"]
+                      : [kind]
+                    ).map((output) => (
+                      <Button
+                        key={output}
+                        variant="outline"
+                        disabled={blocked(shot.id, output)}
+                        onClick={() =>
+                          run(() =>
+                            generate(
+                              shot.id,
+                              output as "image" | "video",
+                              shot.prompt,
+                            ),
+                          )
+                        }
+                      >
+                        {output === "image" ? <ImageIcon /> : <Video />}Generate{" "}
+                        {output}
+                      </Button>
+                    ))}
                   </div>
                   {jobs.data
                     ?.filter((j) => j.shot_id === shot.id)
-                    .map((job) => (
-                      <div key={job.id} className="grid gap-1 text-sm">
-                        <span className="capitalize">
-                          {job.kind}: {job.status.replaceAll("_", " ")}
+                    .map((job, i) => (
+                      <div
+                        key={job.id}
+                        className="flex flex-wrap items-center gap-2 text-sm"
+                      >
+                        <span>
+                          {job.kind} · Version {i + 1} ·{" "}
+                          {job.status.replaceAll("_", " ")}
+                          {job.accepted ? " · Accepted" : ""}
                         </span>
+                        {job.status === "completed" &&
+                          job.outputs.length > 0 && (
+                            <Button
+                              variant="link"
+                              onClick={() => open(`${shot.id}:${job.kind}`)}
+                            >
+                              Review versions
+                            </Button>
+                          )}
                         {["submitting", "unknown"].includes(job.status) && (
                           <p className="text-amber-700">
-                            Submission needs reconciliation. Check the provider
-                            dashboard before requesting another generation.
+                            Check the provider dashboard before requesting
+                            another generation.
                           </p>
-                        )}
-                        {job.status === "completed" && (
-                          <Button
-                            variant="link"
-                            onClick={() => setSelected(job.id)}
-                          >
-                            View output
-                          </Button>
                         )}
                       </div>
                     ))}
                 </section>
               ))}
+              <section className="grid gap-2 border-t pt-4">
+                <h3 className="font-semibold">Final output</h3>
+                <p className="text-sm text-neutral-500">
+                  Accept one version per {kind === "image" ? "image" : "clip"}{" "}
+                  and resolve changes first. Accepted clips are combined in
+                  storyboard order.
+                </p>
+                <Button
+                  disabled={action.isPending || jobs.isPending || jobs.isError}
+                  onClick={() =>
+                    run(async () => {
+                      await api.final(project.id, kind, token);
+                      await refresh();
+                      setSelected("final");
+                    })
+                  }
+                >
+                  <Check />
+                  {action.isPending
+                    ? "Preparing…"
+                    : kind === "image"
+                      ? "Create final image collection"
+                      : "Combine accepted clips"}
+                </Button>
+              </section>
             </div>
           )}
-          {selectedJob && <GenerationOutput job={selectedJob} />}
+          {selectedShot && current && state && versions.length > 0 && (
+            <MediaReview
+              key={`${selectedShot.id}:${selectedKind}`}
+              shot={selectedShot}
+              versions={versions}
+              brief={current}
+              review={state}
+              busy={action.isPending}
+              blocked={blocked(selectedShot.id, selectedKind!)}
+              onGenerate={(prompt, reason) =>
+                run(() =>
+                  generate(selectedShot.id, selectedKind!, prompt, reason),
+                )
+              }
+              onDecision={(job, decision, reason) =>
+                run(() => decide(job, decision, reason))
+              }
+            />
+          )}
+          {selected === "final" && state && (
+            <div className="grid gap-5">
+              {state.finals.map((final) => (
+                <section
+                  key={final.id}
+                  className="grid gap-3 rounded-md border p-4"
+                >
+                  <h3 className="font-semibold">
+                    {final.kind === "video" ? "Final Video" : "Final Images"} ·
+                    Brief v{final.brief_version}
+                  </h3>
+                  {current && final.brief_version < current.version && (
+                    <p className="text-sm text-amber-700">
+                      This output belongs to an earlier brief. Review affected
+                      shots before creating a new final.
+                    </p>
+                  )}
+                  {(final.download_url
+                    ? [final.download_url]
+                    : final.outputs
+                  ).map((url) => (
+                    <div key={url} className="grid gap-2">
+                      <MediaPreview url={url} video={final.kind === "video"} />
+                      <a
+                        className="flex items-center gap-2 text-sm underline"
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download size={16} />
+                        Open / download output
+                      </a>
+                    </div>
+                  ))}
+                  <p className="text-sm text-neutral-500">
+                    {final.job_ids.length} accepted versions, in plan order.
+                  </p>
+                </section>
+              ))}
+              <Button variant="outline" onClick={() => open("storyboard")}>
+                Review {planTitle.toLowerCase()}
+              </Button>
+            </div>
+          )}
+          {notice && (
+            <p role="status" className="text-sm text-emerald-700">
+              {notice}
+            </p>
+          )}
           {error && (
             <p role="alert" className="text-sm text-red-600">
               {error.message}
@@ -482,34 +653,70 @@ export function Workspace({
     </div>
   );
 }
-function GenerationOutput({ job }: { job: GenerationJob }) {
+function RequirementSelection({
+  shot,
+  points,
+  onChange,
+}: {
+  shot: { requirement_keys: string[] };
+  points: NonNullable<Awaited<ReturnType<typeof api.review>>>["points"];
+  onChange: (keys: string[]) => void;
+}) {
   return (
-    <div className="grid gap-4">
-      <p className="text-sm whitespace-pre-wrap">{job.prompt}</p>
-      {job.outputs.map((url) => (
-        <div key={url} className="grid gap-2">
-          {job.kind === "video" ? (
-            <video src={url} controls className="w-full rounded-md" />
-          ) : (
-            <Image
-              src={url}
-              alt="Generated shot"
-              width={1280}
-              height={720}
-              unoptimized
-              className="w-full rounded-md object-contain"
+    <div className="grid gap-2 text-sm">
+      <span>Linked local requirements</span>
+      {points
+        .filter((p) => p.scope === "local")
+        .map((p) => (
+          <label key={p.key} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={shot.requirement_keys.includes(p.key)}
+              onChange={(e) =>
+                onChange(
+                  e.target.checked
+                    ? [...shot.requirement_keys, p.key]
+                    : shot.requirement_keys.filter((k) => k !== p.key),
+                )
+              }
             />
-          )}
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm underline"
-          >
-            Open original output
-          </a>
-        </div>
-      ))}
+            {p.key}: {p.value}
+          </label>
+        ))}
     </div>
+  );
+}
+function ShotRequirements({
+  shot,
+  points,
+  busy,
+  onSave,
+}: {
+  shot: StoryboardShot;
+  points: NonNullable<Awaited<ReturnType<typeof api.review>>>["points"];
+  busy: boolean;
+  onSave: (keys: string[]) => void;
+}) {
+  const [keys, setKeys] = useState(
+    shot.requirement_keys.filter((key) =>
+      points.some((point) => point.key === key),
+    ),
+  );
+  return (
+    <details>
+      <summary className="cursor-pointer text-sm">
+        Edit requirement links
+      </summary>
+      <div className="mt-3 grid gap-3">
+        <RequirementSelection
+          shot={{ requirement_keys: keys }}
+          points={points}
+          onChange={setKeys}
+        />
+        <Button variant="outline" disabled={busy} onClick={() => onSave(keys)}>
+          Save links
+        </Button>
+      </div>
+    </details>
   );
 }

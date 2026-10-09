@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { FileText, Minus, Plus } from "lucide-react";
+import Image from "next/image";
+import { FileText, Minus, Plus, History, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   nodeHeight,
@@ -11,7 +12,11 @@ import {
 } from "@/lib/graph-layout";
 import { zoomCanvasAt } from "@/lib/canvas-viewport";
 
-import type { StoryboardShot, GenerationJob } from "@/types/ripple";
+import type {
+  StoryboardShot,
+  GenerationJob,
+  ProjectReview,
+} from "@/types/ripple";
 
 type Drag = {
   pointerId: number;
@@ -32,6 +37,7 @@ export function GraphCanvas({
   fileCount,
   shots,
   jobs,
+  review,
   onSelect,
 }: {
   projectName: string;
@@ -41,6 +47,7 @@ export function GraphCanvas({
   fileCount: number;
   shots?: StoryboardShot[];
   jobs?: GenerationJob[];
+  review?: ProjectReview;
   onSelect: (id: string) => void;
 }) {
   const element = useRef<HTMLDivElement>(null);
@@ -59,6 +66,7 @@ export function GraphCanvas({
     summary,
     shots,
     jobs,
+    review,
   );
   const items = initialItems.map((item) => ({
     ...item,
@@ -216,21 +224,34 @@ export function GraphCanvas({
             height={surfaceHeight}
             aria-hidden="true"
           >
-            {items
-              .filter((item) => item.parent)
-              .map((item) => {
-                const parent = items.find((node) => node.id === item.parent);
+            {items.flatMap((item) =>
+              (item.parents || (item.parent ? [item.parent] : [])).map((id) => {
+                const parent = items.find((node) => node.id === id);
                 return parent ? (
-                  <path key={item.id} d={connection(parent, item)} />
+                  <path
+                    key={`${id}:${item.id}`}
+                    d={connection(parent, item)}
+                    style={{
+                      stroke: ["summary", "storyboard"].includes(item.id)
+                        ? "#15b995"
+                        : undefined,
+                    }}
+                  />
                 ) : null;
-              })}
+              }),
+            )}
           </svg>
           {items.map((item) => (
             <button
               key={item.id}
               type="button"
-              className="absolute flex h-[178px] w-[226px] touch-none flex-col gap-2 rounded-md border border-neutral-200 bg-white p-3 text-left shadow-sm select-none  focus-visible:outline-emerald-500 active:cursor-grabbing"
-              style={{ left: item.x, top: item.y }}
+              className="absolute flex h-[220px] w-[246px] touch-none flex-col gap-2 rounded-md border border-neutral-200 bg-white p-3 text-left shadow-sm select-none  focus-visible:outline-emerald-500 active:cursor-grabbing"
+              style={{
+                left: item.x,
+                top: item.y,
+                borderStyle: item.id === "summary" ? "dashed" : undefined,
+                borderWidth: item.id === "summary" ? 2 : 1,
+              }}
               onPointerDown={(event) => start(event, item)}
               onClick={(event) => {
                 if (suppressClick.current && event.detail !== 0) {
@@ -241,18 +262,40 @@ export function GraphCanvas({
               }}
             >
               <span className="flex items-center gap-2 text-[13px] font-semibold">
-                <FileText size={17} /> {item.title}
+                {item.video ? <Video size={17} /> : <FileText size={17} />}{" "}
+                {item.title}
               </span>
-              <span className="line-clamp-4 flex-1 overflow-hidden rounded-md bg-neutral-100 p-2.5 text-[11px] leading-snug">
-                <small className="block text-[10px] text-neutral-500">
-                  {item.kind === "source" ? "Source" : "Summary"}
-                </small>
-                {item.summary}
-              </span>
+              {item.preview ? (
+                <span className="relative min-h-0 flex-1 overflow-hidden rounded-md border bg-neutral-100">
+                  {item.video ? (
+                    <video
+                      src={item.preview}
+                      muted
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={item.preview}
+                      alt={item.summary}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  )}
+                </span>
+              ) : (
+                <span className="line-clamp-5 flex-1 overflow-hidden rounded-md bg-neutral-100 p-3 text-[11px] leading-snug">
+                  <small className="mb-1 block text-neutral-500">
+                    {item.kind === "source" ? "Source" : "Summary"}
+                  </small>
+                  {item.summary}
+                </span>
+              )}
               <span
-                className={`rounded-md px-2.5 py-1.5 text-[11px] ${item.kind === "stage" ? "bg-neutral-100 text-neutral-600" : "bg-yellow-100 text-yellow-900"}`}
+                className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-[11px] ${item.review || item.kind === "source" ? "bg-yellow-100 text-yellow-900" : "bg-neutral-100 text-neutral-600"}`}
               >
-                {item.status}
+                <History size={14} /> {item.status}
               </span>
             </button>
           ))}
@@ -264,11 +307,18 @@ export function GraphCanvas({
           >
             {items.map((item) => (
               <g key={item.id}>
-                {items.some((node) => node.id === item.parent) && (
-                  <circle cx={item.x} cy={item.y + nodeHeight / 2} r={5} />
-                )}
-                {items.some((node) => node.parent === item.id) && (
-                  <circle cx={item.x + nodeWidth} cy={item.y + nodeHeight / 2} r={5} />
+                {(item.parents || (item.parent ? [item.parent] : [])).some(
+                  (id) => items.some((node) => node.id === id),
+                ) && <circle cx={item.x} cy={item.y + nodeHeight / 2} r={5} />}
+                {items.some(
+                  (node) =>
+                    node.parent === item.id || node.parents?.includes(item.id),
+                ) && (
+                  <circle
+                    cx={item.x + nodeWidth}
+                    cy={item.y + nodeHeight / 2}
+                    r={5}
+                  />
                 )}
               </g>
             ))}

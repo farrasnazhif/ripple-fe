@@ -44,5 +44,74 @@ export type Project = {
   created_at: string;
 };
 
-export type StoryboardShot = { id: string; title: string; prompt: string; position: number };
-export type GenerationJob = { id: string; shot_id: string; request_key: string; kind: "image" | "video"; prompt: string; provider_id: string; status: string; outputs: string[]; created_at: string };
+export type StoryboardShot = {
+  id: string;
+  title: string;
+  prompt: string;
+  position: number;
+  requirement_keys: string[];
+};
+export type GenerationJob = {
+  id: string;
+  shot_id: string;
+  request_key: string;
+  kind: "image" | "video";
+  prompt: string;
+  provider_id: string;
+  status: string;
+  outputs: string[];
+  created_at: string;
+  brief_version: number;
+  accepted: boolean;
+};
+
+export type BriefPoint = {
+  key: string;
+  value: string;
+  scope: "local" | "global";
+};
+export type ShotReview = { shot_id: string; status: string; reasons: string[] };
+export type ProjectReview = {
+  output_type: "" | "image" | "video" | "mixed";
+  points: BriefPoint[];
+  versions: {
+    version: number;
+    raw_text: string;
+    summary: string;
+    points: BriefPoint[];
+    attachments: string[];
+    created_at: string;
+  }[];
+  changes: {
+    id: string;
+    brief_version: number;
+    note: string;
+    diffs: { key: string; old: string; new: string }[];
+    impacts: ShotReview[];
+  }[];
+  decisions: {
+    id: string;
+    shot_id: string;
+    brief_version: number;
+    action: string;
+    reason: string;
+    job_id?: string;
+  }[];
+  finals: FinalOutput[];
+};
+export type FinalOutput = {
+  id: string;
+  brief_version: number;
+  kind: "image" | "video";
+  job_ids: string[];
+  outputs: string[];
+  download_url?: string;
+};
+export type BriefEdit = {
+  expected_version: number;
+  raw_text: string;
+  summary: string;
+  points: BriefPoint[];
+  remove_attachments: string[];
+  note: string;
+};
