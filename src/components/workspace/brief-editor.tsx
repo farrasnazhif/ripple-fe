@@ -362,7 +362,7 @@ export function BriefEditor({
           </Button>
           {mode === "brief" && (
             <Button
-              variant="outline"
+              variant="generation"
               disabled={
                 busy ||
                 files.some((_, i) => !uploaded.includes(i)) ||
@@ -427,7 +427,7 @@ export function BriefEditor({
                 />
               </label>
               <Button
-                variant="outline"
+                variant="generation"
                 disabled={busy || !summary.trim() || !instructions.trim()}
                 onClick={() =>
                   run(async () => {

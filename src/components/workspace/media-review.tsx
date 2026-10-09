@@ -167,6 +167,7 @@ export function MediaReview({
               />
             </label>
             <Button
+              variant="generation"
               disabled={busy || blocked || !prompt.trim() || !reason.trim()}
               onClick={() => onGenerate(prompt, reason)}
             >
@@ -200,7 +201,7 @@ export function MediaReview({
           <MediaPreview url={job.outputs[0]} video={job.kind === "video"} />
           <div className="flex flex-wrap gap-2 border-t bg-white p-3">
             <Button
-              variant="outline"
+              variant="generation"
               disabled={busy || blocked}
               onClick={() => onGenerate(job.prompt)}
             >

@@ -317,7 +317,7 @@ export function Workspace({
                 requirements automatically apply to all shots.
               </p>
               <Button
-                variant="outline"
+                variant="generation"
                 disabled={action.isPending}
                 onClick={() =>
                   run(async () => {
@@ -514,7 +514,7 @@ export function Workspace({
                     ).map((output) => (
                       <Button
                         key={output}
-                        variant="outline"
+                        variant="generation"
                         disabled={blocked(shot.id, output)}
                         onClick={() =>
                           run(() =>

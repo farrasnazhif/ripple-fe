@@ -119,19 +119,22 @@ export function AppSidebar() {
                 aria-label="Account menu"
                 render={<SidebarMenuButton size="lg" tooltip="Account" />}
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-md bg-white font-bold text-black">
-                  {(user.data?.username || user.data?.email || "R")
-                    .slice(0, 1)
-                    .toUpperCase()}
-                </span>
-                <span className="flex min-w-0 flex-col text-left leading-tight group-data-[collapsible=icon]:hidden">
-                  <strong className="truncate">
-                    {user.data?.username || "Account"}
-                  </strong>
-                  <small className="truncate text-[11px] text-neutral-400">
-                    {user.data?.email || ""}
-                  </small>
-                </span>
+                <div className="flex justify-center gap-2">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-md bg-white font-bold text-black">
+                    {(user.data?.username || user.data?.email || "R")
+                      .slice(0, 1)
+                      .toUpperCase()}
+                  </span>
+                  <span className="flex min-w-0 flex-col text-left leading-tight group-data-[collapsible=icon]:hidden">
+                    <strong className="truncate">
+                      {user.data?.username || "Account"}
+                    </strong>
+                    <small className="truncate text-[11px] text-neutral-400">
+                      {user.data?.email || ""}
+                    </small>
+                  </span>
+                </div>
+
                 <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
               </DropdownMenuTrigger>
               <DropdownMenuContent

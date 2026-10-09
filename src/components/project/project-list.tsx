@@ -358,7 +358,7 @@ export function ProjectList() {
         />
       )}
       <Button
-        className="fixed right-6 bottom-6 z-10 size-12 rounded-md bg-[#19b99a] text-white shadow-lg hover:bg-[#14a98d]"
+        className="fixed right-6 bottom-6 z-10 size-12 rounded-md shadow-lg"
         onClick={() => setCreating(true)}
         aria-label="Create a project"
       >
