@@ -101,7 +101,7 @@ export function SignInForm() {
                   mode === "sign-up" ? "new-password" : "current-password"
                 }
                 required
-                minLength={mode === "sign-up" ? 15 : undefined}
+                minLength={mode === "sign-up" ? 8 : undefined}
                 aria-describedby={mode === "sign-up" ? "password-hint" : undefined}
                 placeholder="••••••••"
                 className="h-12 bg-white px-4 text-base"
@@ -110,7 +110,7 @@ export function SignInForm() {
 
             {mode === "sign-up" && (
               <p id="password-hint" className="-mt-3 text-xs text-muted-foreground">
-                Use at least 15 characters.
+                Use at least 8 characters.
               </p>
             )}
 
