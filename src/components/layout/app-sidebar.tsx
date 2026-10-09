@@ -119,7 +119,7 @@ export function AppSidebar() {
                 aria-label="Account menu"
                 render={<SidebarMenuButton size="lg" tooltip="Account" />}
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-md bg-[#19b99a] font-bold text-white">
+                <span className="grid size-8 shrink-0 place-items-center rounded-md bg-white font-bold text-black">
                   {(user.data?.username || user.data?.email || "R")
                     .slice(0, 1)
                     .toUpperCase()}
