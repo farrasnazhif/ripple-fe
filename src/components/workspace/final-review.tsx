@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Check, Download, FileText, SlidersHorizontal, Sparkles, Video } from "lucide-react";
+import { Check, FileText, Video } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,7 +70,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
         {selected.prompt && <section className="grid gap-2 rounded-md border p-3 text-sm"><h4 className="font-medium">{selected.parent_id ? "Saved adjustments" : "Generation prompt"}</h4><p className="whitespace-pre-wrap">{selected.prompt}</p><p className="text-neutral-500">Reason: {selected.reason}</p></section>}
         {active && <p role="status" className="text-sm text-amber-700">{active.status === "unknown" || active.status === "submitting" ? "Submission is awaiting confirmation. Reload to check its saved status before sending another request." : "A refined final is generating. Its preview will appear here when ready."}</p>}
         {!completed && !active && <p role="alert" className="text-sm text-red-600">This refinement {selected.status === "nsfw" ? "was blocked by the provider" : `ended with status ${selected.status}`}. Select a completed version to try different adjustments.</p>}
-        <Button variant="outline" disabled={busy || !!active || stale || !completed || !url} onClick={() => { setAdjusting(!adjusting); setPrompt(""); setReason(""); }}><SlidersHorizontal />Adjust / Refine</Button>
+        <Button variant="outline" disabled={busy || !!active || stale || !completed || !url} onClick={() => { setAdjusting(!adjusting); setPrompt(""); setReason(""); }}>Adjust / Refine</Button>
         {adjusting && <div className="grid gap-3">
           <label className="grid gap-2 text-sm">What would you like to change?
             <Textarea value={prompt} maxLength={10000} disabled={busy} onChange={(event) => setPrompt(event.target.value)} placeholder="Make the lighting warmer while preserving the composition." className="min-h-32" />
@@ -79,9 +79,9 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
             <Textarea value={reason} maxLength={2000} disabled={busy} onChange={(event) => setReason(event.target.value)} placeholder="Explain why this final output needs an adjustment." />
           </label>
           <p className="text-xs text-neutral-500">{video ? "The selected final video" : "The selected image"} is sent as the reference. {video ? "This edits the combined video." : "Other images in this collection stay unchanged."}</p>
-          <Button variant="generation" disabled={busy || !!active || stale || !prompt.trim() || !reason.trim()} onClick={() => runGeneration(video ? "video_refinement" : "image_refinement", refine)}><Sparkles />{busy ? "Submitting…" : "Generate refined final"}</Button>
+          <Button variant="generation" disabled={busy || !!active || stale || !prompt.trim() || !reason.trim()} onClick={() => runGeneration(video ? "video_refinement" : "image_refinement", refine)}>{busy ? "Submitting…" : "Generate refined final"}</Button>
         </div>}
-        <Button disabled={busy || stale || !completed || !url || selected.accepted !== false} onClick={() => run(async () => { await api.acceptFinal(projectId, selected.id, token); await refresh(); })}><Check />{selected.accepted !== false ? "Accepted" : "Mark as accepted"}</Button>
+        <Button disabled={busy || stale || !completed || !url || selected.accepted !== false} onClick={() => run(async () => { await api.acceptFinal(projectId, selected.id, token); await refresh(); })}>{selected.accepted !== false ? "Accepted" : "Mark as accepted"}</Button>
         <p className="text-xs text-neutral-500">Accepting updates the Final Output node. Previous versions and the original image/clip nodes remain in history.</p>
       </div>
       <div className="grid min-w-0 content-start gap-4 lg:border-l lg:pl-6">
@@ -97,7 +97,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
             {url ? <MediaPreview url={url} video={video} /> : <div role="status" className="grid aspect-video place-items-center rounded-md border bg-neutral-50 text-sm text-neutral-500">{completed ? "Preview unavailable" : `Status: ${selected.status}`}</div>}
           </section>
         </div>
-        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm underline"><Download size={16} />Open / download output</a>}
+        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm underline">Open / download output</a>}
         <div className="flex gap-3 overflow-x-auto pb-2" aria-label="Final output version history">
           {versions.map((final, index) => {
             const preview = final.download_url || final.outputs[final.image_index || 0];

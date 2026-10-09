@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import { Check, RefreshCw, SlidersHorizontal, History } from "lucide-react";
+import { Check, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -218,7 +218,6 @@ export function MediaReview({
               disabled={busy || blocked}
               onClick={() => onGenerate(job.prompt)}
             >
-              <RefreshCw />
               Generate again
             </Button>
             <Button
@@ -229,14 +228,12 @@ export function MediaReview({
                 setPrompt(job.prompt);
               }}
             >
-              <SlidersHorizontal />
               Adjust / Refine
             </Button>
             <Button
               disabled={busy || requiresReview || job.accepted}
               onClick={() => onDecision(job, "accept", "")}
             >
-              <Check />
               {job.accepted ? "Accepted" : "Mark as accepted"}
             </Button>
           </div>

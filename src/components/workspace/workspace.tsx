@@ -2,12 +2,6 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus,
-  Trash2,
-  Sparkles,
-  ImageIcon,
-  Video,
-  Check,
   ArrowRight,
 } from "lucide-react";
 import { GraphCanvas } from "@/components/workspace/graph-canvas";
@@ -32,7 +26,6 @@ import { api, ApiError } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -290,11 +283,7 @@ export function Workspace({
                   <DialogTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">
                     {selected === "summary" ? "Brief Summary" : planTitle}
                   </DialogTitle>
-                  <DialogDescription className="mt-0.5 text-sm text-neutral-600">
-                    {selected === "summary"
-                      ? "Review your summarized brief, confirm requirements, and track changes before generating."
-                      : "Review shots, link brief requirements, and track the impact of changes before generating clips."}
-                  </DialogDescription>
+
                 </DialogHeader>
               </div>
             </div>
@@ -307,11 +296,7 @@ export function Workspace({
                     ? `${selectedKind === "video" ? "Clip" : "Image"} ${selectedShot.position} · ${selectedShot.title}`
                     : "Project"}
               </DialogTitle>
-              <DialogDescription>
-                {selectedShot
-                  ? "Review saved versions, refine the output, and record your decision."
-                  : "Confirm your brief, track changes, and preserve the work that still fits."}
-              </DialogDescription>
+
             </DialogHeader>
           )}
           <div className={styledNodeHeader ? "min-h-0 flex-1 overflow-y-auto p-6" : "contents"}>
@@ -364,7 +349,7 @@ export function Workspace({
                               throw error;
                             } finally { await refresh(); }
                           })}>
-                          <ImageIcon />Generate final image
+                          Generate final image
                         </Button>
                         {state.finals.some((final) => final.kind === "image") && (
                           <Button variant="outline" onClick={() => open("final")}>Open final image</Button>
@@ -375,7 +360,7 @@ export function Workspace({
                             await api.outputType(project.id, "video", token);
                             await refresh(); setPlanning(true);
                           })}>
-                          <Video />Video · Create storyboard
+                          Video · Create storyboard
                         </Button>
                       </div>
                     )}
@@ -414,7 +399,6 @@ export function Workspace({
                   })
                 }
               >
-                <Sparkles />
                 Draft {planTitle.toLowerCase()} with ChatGPT
               </Button>
               {rows.map((row, i) => (
@@ -472,7 +456,6 @@ export function Workspace({
                         variant="destructive"
                         disabled={rows.length === 1 || action.isPending}
                       >
-                        <Trash2 />
                         Remove
                       </Button>
                     }
@@ -490,7 +473,6 @@ export function Workspace({
                     ])
                   }
                 >
-                  <Plus />
                   Add {kind === "image" ? "image" : "shot"}
                 </Button>
                 <Button
@@ -602,7 +584,7 @@ export function Workspace({
                           )
                         }
                       >
-                        {output === "image" ? <ImageIcon /> : <Video />}Generate{" "}
+                        Generate{" "}
                         {output}
                       </Button>
                     ))}
@@ -612,7 +594,7 @@ export function Workspace({
                     .map((job, i) => (
                       <div
                         key={job.id}
-                        className="flex flex-wrap items-center gap-2 text-sm"
+                        className={`flex flex-wrap items-center gap-2 text-sm ${i > 0 ? "border-t border-neutral-200 pt-3" : ""}`}
                       >
                         <span>
                           {job.kind} · Version {i + 1} ·{" "}
@@ -655,7 +637,6 @@ export function Workspace({
                     })
                   }
                 >
-                  <Check />
                   {action.isPending
                     ? "Preparing…"
                     : kind === "image"

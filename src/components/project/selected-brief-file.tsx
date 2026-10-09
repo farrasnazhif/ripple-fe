@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { FileText, X } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 
@@ -35,11 +35,10 @@ export function SelectedBriefFile({
             <Button
               type="button"
               variant="destructive"
-              size="icon-sm"
               aria-label={`Remove ${file.name}`}
               className="absolute right-2 top-2 z-10 shadow-sm"
             >
-              <X className="size-4" strokeWidth={2.5} />
+              Remove
             </Button>
           }
           onConfirm={onRemove}

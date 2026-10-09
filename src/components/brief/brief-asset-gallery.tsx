@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,9 +53,9 @@ export function BriefAssetGallery({ files, token, busy, onRemove }: {
         <div className="flex items-center justify-between gap-2 text-xs text-neutral-500">
           <span aria-live="polite">{start + 1}–{Math.min(start + assetPageSize, filtered.length)} of {filtered.length}</span>
           {pages > 1 && <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon-sm" aria-label="Previous asset page" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft /></Button>
+            <Button variant="outline" aria-label="Previous asset page" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Previous</Button>
             <span>Page {currentPage + 1} of {pages}</span>
-            <Button variant="outline" size="icon-sm" aria-label="Next asset page" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight /></Button>
+            <Button variant="outline" aria-label="Next asset page" disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}>Next</Button>
           </div>}
         </div>
       )}

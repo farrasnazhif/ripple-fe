@@ -2,14 +2,13 @@
 
 import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { BriefEditor } from "@/components/workspace/brief-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -84,7 +83,6 @@ export function BriefDetailDialog({
       {/* Rounded Rectangle Header Container */}
       <div className="shrink-0 px-6 pt-6 pb-0">
         <div className="relative overflow-hidden rounded-md bg-neutral-100 p-6 text-neutral-900">
-          
           {/* Dynamic Colorable SVG Mask (Change `bg-neutral-900` to any color e.g., `bg-emerald-600`) */}
           <div
             aria-hidden="true"
@@ -95,9 +93,7 @@ export function BriefDetailDialog({
             <DialogTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">
               Project Brief
             </DialogTitle>
-            <DialogDescription className="mt-0.5 text-sm text-neutral-600">
-              Confirm specifications, manage creative direction, and review attachments in real time.
-            </DialogDescription>
+
           </DialogHeader>
         </div>
       </div>
@@ -142,12 +138,9 @@ export function BriefDetailDialog({
               </div>
               <Button
                 variant="outline"
-                size="sm"
                 disabled={action.isPending}
                 onClick={() => run(refresh)}
-                className="h-8 gap-1.5 border-red-200 bg-white text-xs text-red-700 hover:bg-red-50"
               >
-                <RefreshCw className="h-3.5 w-3.5" />
                 Reload
               </Button>
             </div>

@@ -2,18 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import {
-  Plus,
-  Trash2,
-  Sparkles,
-  Upload,
-  History,
-  FileText,
-  Layers,
-  Info,
-  Clock,
-  Save,
-} from "lucide-react";
+import { Trash2, Upload, History, Info, Clock } from "lucide-react";
 import { api } from "@/lib/api";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
@@ -124,7 +113,9 @@ export function BriefEditor({
 
         <div className="flex items-center gap-2">
           <Clock className="h-3.5 w-3.5 text-neutral-400" />
-          <span className="text-xs font-medium text-neutral-500">View History:</span>
+          <span className="text-xs font-medium text-neutral-500">
+            View History:
+          </span>
           <Select
             items={[
               { value: "current", label: "Current editor" },
@@ -176,10 +167,18 @@ export function BriefEditor({
 
           {previous.points.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-amber-900">Requirements in this version</span>
+              <span className="text-xs font-semibold text-amber-900">
+                Requirements in this version
+              </span>
               {previous.points.map((p) => (
-                <div key={p.key} className="rounded-md bg-white/60 p-2.5 text-xs">
-                  <strong className="font-semibold text-amber-900">{p.key}:</strong> {p.value}
+                <div
+                  key={p.key}
+                  className="rounded-md bg-white/60 p-2.5 text-xs"
+                >
+                  <strong className="font-semibold text-amber-900">
+                    {p.key}:
+                  </strong>{" "}
+                  {p.value}
                 </div>
               ))}
             </div>
@@ -191,8 +190,6 @@ export function BriefEditor({
                 <Button
                   key={id}
                   variant="outline"
-                  size="sm"
-                  className="h-8 bg-white text-xs font-medium text-amber-900 hover:bg-amber-100/50"
                   onClick={() =>
                     run(async () => {
                       const file = await api.downloadAttachment(
@@ -220,30 +217,13 @@ export function BriefEditor({
           <div className="flex flex-col gap-3 rounded-md bg-neutral-50/80 p-5">
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-xs font-bold uppercase text-neutral-600 tracking-wider">
-                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 text-[10px] text-emerald-800">1</span>
-                <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 text-[10px] text-emerald-800">
+                  1
+                </span>
                 {mode === "brief" ? "Brief Description" : "Confirmed Summary"}
               </label>
 
-              {mode === "summary" && (
-                <ConfirmDestructiveAction
-                  title="Clear summary?"
-                  description="This clears the text in your current draft. Saving creates a new version; previous saved versions stay in history."
-                  confirmLabel="Clear text"
-                  onConfirm={() => setSummary("")}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs font-medium text-red-600 hover:bg-red-50"
-                      disabled={busy || !summary}
-                    >
-                      <Trash2 className="mr-1 h-3.5 w-3.5" />
-                      Clear summary
-                    </Button>
-                  }
-                />
-              )}
+
             </div>
 
             <Textarea
@@ -268,8 +248,9 @@ export function BriefEditor({
             <div className="flex flex-col gap-4 rounded-md bg-neutral-50/80 p-5">
               <div className="flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-xs font-bold uppercase text-neutral-600 tracking-wider">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 text-[10px] text-emerald-800">2</span>
-                  <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 text-[10px] text-emerald-800">
+                    2
+                  </span>
                   Reference Files & Images
                 </h3>
               </div>
@@ -327,7 +308,8 @@ export function BriefEditor({
 
               <p className="flex items-center gap-1.5 text-xs text-neutral-400">
                 <Info className="h-3.5 w-3.5 shrink-0" />
-                Removed files remain preserved in earlier saved history versions.
+                Removed files remain preserved in earlier saved history
+                versions.
               </p>
             </div>
           )}
@@ -340,12 +322,8 @@ export function BriefEditor({
                   <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 text-[10px] text-emerald-800">
                     {mode === "brief" ? "3" : "2"}
                   </span>
-                  <Layers className="h-3.5 w-3.5 text-emerald-600" />
                   Key Requirements
                 </h3>
-                <p className="mt-1 text-xs text-neutral-500">
-                  Define guidelines for your team. Global rules apply everywhere; local rules apply only to tagged scenes.
-                </p>
               </div>
               <span className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 shadow-2xs">
                 {points.length} {points.length === 1 ? "rule" : "rules"}
@@ -356,7 +334,7 @@ export function BriefEditor({
               {points.map((point, i) => (
                 <div
                   key={i}
-                  className="flex flex-col gap-2 rounded-md bg-white p-3 shadow-2xs sm:flex-row sm:items-center"
+                  className="flex flex-col gap-2 sm:flex-row sm:items-center"
                 >
                   {/* Category Name */}
                   <div className="sm:w-1/3">
@@ -365,7 +343,7 @@ export function BriefEditor({
                       value={point.key}
                       maxLength={80}
                       placeholder="Category (e.g. Lighting)"
-                      className="h-9 rounded-md bg-neutral-50/80 text-xs font-semibold placeholder:text-neutral-400"
+                      className="h-8 text-xs md:text-xs"
                       onChange={(e) =>
                         setPoints((v) =>
                           v.map((p, j) =>
@@ -383,7 +361,7 @@ export function BriefEditor({
                       value={point.value}
                       maxLength={2000}
                       placeholder="Guideline (e.g. Warm sunlight through blinds)"
-                      className="h-9 rounded-md bg-neutral-50/80 text-xs placeholder:text-neutral-400"
+                      className="h-8 text-xs md:text-xs"
                       onChange={(e) =>
                         setPoints((v) =>
                           v.map((p, j) =>
@@ -414,7 +392,7 @@ export function BriefEditor({
                     >
                       <SelectTrigger
                         aria-label={`Requirement ${i + 1} scope`}
-                        className="h-9 w-full sm:w-24 rounded-md bg-neutral-50/80 text-xs font-medium"
+                        className="w-full text-xs sm:w-24"
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -433,12 +411,11 @@ export function BriefEditor({
                       trigger={
                         <Button
                           aria-label={`Remove requirement ${i + 1}`}
-                          variant="ghost"
+                          variant="destructive"
                           size="icon"
-                          className="h-9 w-9 text-neutral-400 hover:bg-red-50 hover:text-red-600"
                           disabled={busy}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 />
                         </Button>
                       }
                     />
@@ -449,17 +426,12 @@ export function BriefEditor({
 
             <Button
               variant="outline"
-              size="sm"
-              className="h-9 gap-1.5 self-start rounded-md bg-white text-xs font-semibold text-neutral-700 shadow-2xs hover:bg-neutral-100"
+              className="self-start"
               disabled={busy || points.length >= 50}
               onClick={() =>
-                setPoints((v) => [
-                  ...v,
-                  { key: "", value: "", scope: "local" },
-                ])
+                setPoints((v) => [...v, { key: "", value: "", scope: "local" }])
               }
             >
-              <Plus className="h-3.5 w-3.5" />
               Add requirement rule
             </Button>
           </div>
@@ -469,15 +441,13 @@ export function BriefEditor({
             <div className="flex flex-col gap-4 rounded-md bg-emerald-50/40 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-200 text-[10px] font-bold text-emerald-900">4</span>
-                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-200 text-[10px] font-bold text-emerald-900">
+                    4
+                  </span>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
                       AI Summary Assistant
                     </h4>
-                    <p className="text-xs text-neutral-500">
-                      Auto-generate a concise brief summary from your text and reference attachments.
-                    </p>
                   </div>
                 </div>
 
@@ -514,7 +484,6 @@ export function BriefEditor({
                     })
                   }
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
                   Generate summary with ChatGPT
                 </Button>
               </div>
@@ -530,8 +499,9 @@ export function BriefEditor({
                   placeholder="Your generated or manual summary will appear here..."
                   onChange={(e) => setSummary(e.target.value)}
                 />
-                <p className="text-xs text-neutral-400">
-                  Save this brief version to confirm your draft, then switch to Summary Mode to refine options.
+                <p className="text-xs text-neutral-400 text-center mt-1">
+                  Save this brief version to confirm your draft, then switch to
+                  Summary Mode to refine options.
                 </p>
               </div>
             </div>
@@ -541,7 +511,6 @@ export function BriefEditor({
             <div className="flex flex-col gap-4 rounded-md bg-emerald-50/40 p-5">
               <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-900">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
                   Refinement Instructions
                 </label>
                 <Textarea
@@ -568,7 +537,6 @@ export function BriefEditor({
                   })
                 }
               >
-                <Sparkles className="h-3.5 w-3.5" />
                 Refine summary draft
               </Button>
             </div>
@@ -591,9 +559,7 @@ export function BriefEditor({
                 busy || points.some((p) => !p.key.trim() || !p.value.trim())
               }
               onClick={() => run(save)}
-              className="h-10 gap-2 rounded-md bg-neutral-900 px-6 text-xs font-bold text-white shadow-sm hover:bg-neutral-800 shrink-0"
             >
-              <Save className="h-3.5 w-3.5" />
               {busy
                 ? "Saving..."
                 : mode === "summary"

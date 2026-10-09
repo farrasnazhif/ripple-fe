@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, FileText, Trash2, Video } from "lucide-react";
+import { FileText, Video } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
@@ -58,8 +58,8 @@ export function BriefAttachmentPreview({ file, token, busy, onRemove }: {
       <ConfirmDestructiveAction title={`Remove “${file.file_name}”?`}
         description="This reference will be removed from the next saved brief version. Earlier versions retain access to the original file."
         onConfirm={onRemove} trigger={
-          <Button variant="destructive" size="icon-xs" disabled={busy}
-            aria-label={`Remove ${file.file_name}`} className="absolute right-2 top-2"><Trash2 /></Button>
+          <Button variant="destructive" disabled={busy}
+            aria-label={`Remove ${file.file_name}`} className="absolute right-2 top-2">Remove</Button>
         } />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-md sm:max-w-4xl">
@@ -78,7 +78,7 @@ export function BriefAttachmentPreview({ file, token, busy, onRemove }: {
               : video ? <video src={url} controls preload="metadata" className="max-h-[65vh] w-full rounded-md" />
               : file.content_type === "application/pdf" ? <iframe src={url} title={`Preview ${file.file_name}`} sandbox="" className="h-[60vh] w-full rounded-md border" />
               : <p className="text-sm text-neutral-500">Open the original file to view its content.</p>}
-              <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-emerald-700 underline">Open original <ArrowUpRight className="size-4" /></a>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-emerald-700 underline">Open original</a>
             </>
           )}
         </DialogContent>
