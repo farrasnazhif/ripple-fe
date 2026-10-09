@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
-  title: "Ripple — creative work, connected",
+  title: "Ripple",
   description: "Trace the impact of every creative change.",
 };
 

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
@@ -9,12 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function SignInForm() {
+export function SignInForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [error, setError] = useState("");
 
   const auth = useMutation({
@@ -33,7 +33,9 @@ export function SignInForm() {
       sessionStorage.setItem("ripple_token", result.token);
       const next = new URLSearchParams(window.location.search).get("next");
       router.replace(
-        next === "/project" || next === "/briefs" || /^\/project\/[0-9a-f-]{36}$/i.test(next || "")
+        next === "/project" ||
+          next === "/briefs" ||
+          /^\/project\/[0-9a-f-]{36}$/i.test(next || "")
           ? next!
           : "/project",
       );
@@ -45,11 +47,9 @@ export function SignInForm() {
   return (
     // Grid container
     <main className="grid min-h-screen grid-cols-1 bg-[#ffffff] lg:grid-cols-[40%_60%]">
-      
       {/* Left Column: Form with increased outer and vertical padding */}
       <div className="flex flex-col justify-center px-10 py-16 sm:px-20 lg:px-28 lg:py-24">
         <div className="mx-auto w-full max-w-[440px]">
-          
           {/* Logo Replacement */}
           <img
             src="/main-logo-black.png"
@@ -102,20 +102,28 @@ export function SignInForm() {
                 }
                 required
                 minLength={mode === "sign-up" ? 8 : undefined}
-                aria-describedby={mode === "sign-up" ? "password-hint" : undefined}
+                aria-describedby={
+                  mode === "sign-up" ? "password-hint" : undefined
+                }
                 placeholder="••••••••"
                 className="h-12 bg-white px-4 text-base"
               />
             </Label>
 
             {mode === "sign-up" && (
-              <p id="password-hint" className="-mt-3 text-xs text-muted-foreground">
+              <p
+                id="password-hint"
+                className="-mt-3 text-xs text-muted-foreground"
+              >
                 Use at least 8 characters.
               </p>
             )}
 
             {error && (
-              <p className="rounded-md bg-red-50 p-4 text-xs text-red-700" role="alert">
+              <p
+                className="rounded-md bg-red-50 p-4 text-xs text-red-700"
+                role="alert"
+              >
                 {error}
               </p>
             )}
@@ -123,7 +131,7 @@ export function SignInForm() {
             <Button
               type="submit"
               // className="mt-4 h-13 w-full py-7 text-base font-medium bg-[#16B58B] hover:bg-[#008878] text-white"
-              className="mt-4 h-13 w-full py-7 text-base font-medium text-white"
+              className="mt-2 h-13 w-full py-3 text-base font-medium text-white"
               disabled={auth.isPending}
             >
               {auth.isPending
@@ -131,36 +139,25 @@ export function SignInForm() {
                 : mode === "sign-up"
                   ? "Create account"
                   : "Sign in"}
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-0 h-4 w-4" />
             </Button>
           </form>
 
-          {/* Switch Mode Section */}
           <div className="mt-10 border-t border-neutral-200/80 pt-8 text-center text-xs text-primary">
             {mode === "sign-in" ? (
-              <Button
-                className="h-auto p-0 font-semibold text-primary hover:text-primary-muted"
-                variant="link"
-                type="button"
-                onClick={() => {
-                  setMode("sign-up");
-                  setError("");
-                }}
-              >
-                New here? Create an account <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
+              <>
+                New here?{" "}
+                <Link href="/sign-up" className="font-semibold text-blue-600 transition-colors hover:text-blue-800 hover:underline">
+                  Sign up
+                </Link>
+              </>
             ) : (
-              <Button
-                className="h-auto p-0 font-semibold text-primary hover:text-primary-muted"
-                variant="link"
-                type="button"
-                onClick={() => {
-                  setMode("sign-in");
-                  setError("");
-                }}
-              >
-                Already have an account? Sign in <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
+              <>
+                Already have an account?{" "}
+                <Link href="/sign-in" className="font-semibold text-blue-600 transition-colors hover:text-blue-800 hover:underline">
+                  Sign in
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -175,7 +172,6 @@ export function SignInForm() {
         />
         <div className="absolute inset-0 bg-black/5 mix-blend-multiply" />
       </div>
-
     </main>
   );
 }
