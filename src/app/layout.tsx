@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
-import { Geist } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
   title: "Ripple — creative work, connected",
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html lang="en" className={cn("font-sans", manrope.variable)}>
       <body>
         <AppProviders>{children}</AppProviders>
       </body>
