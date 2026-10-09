@@ -10,6 +10,7 @@ import { BriefEditor } from "@/components/workspace/brief-editor";
 import { ProjectBudgetButton, GenerationBudgetDialog } from "@/components/project/project-budget";
 import { FinalReview } from "@/components/workspace/final-review";
 import { MediaReview } from "@/components/workspace/media-review";
+import { GenerationModelSelect } from "@/components/workspace/generation-model-select";
 import { GenerationProgressDialog } from "@/components/workspace/generation-progress-dialog";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
@@ -377,30 +378,34 @@ export function Workspace({
                 Review prompts and link local requirements before saving. Global
                 requirements automatically apply to all shots.
               </p>
-              <Button
-                variant="generation"
-                disabled={action.isPending}
-                onClick={() =>
-                  run(async () => {
-                    const drafted = await api.draftPlan(
-                      project.id,
-                      current.summary || "",
-                      token,
-                    );
-                    setRows(
-                      drafted.map((s) => ({
-                        title: s.title,
-                        prompt: s.prompt,
-                        requirement_keys: state.points
-                          .filter((p) => p.scope === "local")
-                          .map((p) => p.key),
-                      })),
-                    );
-                  })
-                }
-              >
-                Draft {planTitle.toLowerCase()} with ChatGPT
-              </Button>
+              <div className="flex w-full max-w-[440px] flex-row items-end gap-2">
+                <GenerationModelSelect kind="text" disabled={action.isPending} />
+                <Button
+                  variant="generation"
+                className="h-auto min-h-8 min-w-0 flex-[2] py-1 whitespace-normal"
+                  disabled={action.isPending}
+                  onClick={() =>
+                    run(async () => {
+                      const drafted = await api.draftPlan(
+                        project.id,
+                        current.summary || "",
+                        token,
+                      );
+                      setRows(
+                        drafted.map((s) => ({
+                          title: s.title,
+                          prompt: s.prompt,
+                          requirement_keys: state.points
+                            .filter((p) => p.scope === "local")
+                            .map((p) => p.key),
+                        })),
+                      );
+                    })
+                  }
+                >
+                  Draft {planTitle.toLowerCase()} with ChatGPT
+                </Button>
+              </div>
               {rows.map((row, i) => (
                 <fieldset key={i} className="grid gap-3 rounded-md border p-4">
                   <legend className="px-1 text-sm">

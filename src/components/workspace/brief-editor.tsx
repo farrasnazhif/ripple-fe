@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { GenerationModelSelect } from "@/components/workspace/generation-model-select";
 import { BriefAssetGallery } from "@/components/brief/brief-asset-gallery";
 import { SelectedBriefFile } from "@/components/project/selected-brief-file";
 import type {
@@ -451,41 +452,45 @@ export function BriefEditor({
                   </div>
                 </div>
 
-                <Button
-                  variant="generation"
-                  disabled={
-                    busy ||
-                    files.some((_, i) => !uploaded.includes(i)) ||
-                    (!text.trim() && !attachments.length)
-                  }
-                  onClick={() =>
-                    run(async () => {
-                      if (text !== brief.raw_text || removed.length > 0) {
-                        await api.editBrief(
-                          project.id,
-                          {
-                            expected_version: brief.version,
-                            raw_text: text,
-                            summary: "",
-                            points,
-                            remove_attachments: removed,
-                            note: "Source saved for summary",
-                          },
+                <div className="flex w-full max-w-[440px] flex-row items-end gap-2">
+                  <GenerationModelSelect kind="text" disabled={busy} />
+                  <Button
+                    variant="generation"
+                  className="h-auto min-h-8 min-w-0 flex-[2] py-1 whitespace-normal"
+                    disabled={
+                      busy ||
+                      files.some((_, i) => !uploaded.includes(i)) ||
+                      (!text.trim() && !attachments.length)
+                    }
+                    onClick={() =>
+                      run(async () => {
+                        if (text !== brief.raw_text || removed.length > 0) {
+                          await api.editBrief(
+                            project.id,
+                            {
+                              expected_version: brief.version,
+                              raw_text: text,
+                              summary: "",
+                              points,
+                              remove_attachments: removed,
+                              note: "Source saved for summary",
+                            },
+                            token,
+                          );
+                          await refresh();
+                          setRemoved([]);
+                        }
+                        const result = await api.draftSummary(
+                          project.brief_id,
                           token,
                         );
-                        await refresh();
-                        setRemoved([]);
-                      }
-                      const result = await api.draftSummary(
-                        project.brief_id,
-                        token,
-                      );
-                      setSummary(result.summary);
-                    })
-                  }
-                >
-                  Generate summary with ChatGPT
-                </Button>
+                        setSummary(result.summary);
+                      })
+                    }
+                  >
+                    Generate summary with ChatGPT
+                  </Button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -522,23 +527,27 @@ export function BriefEditor({
                 />
               </div>
 
-              <Button
-                variant="generation"
-                disabled={busy || !summary.trim() || !instructions.trim()}
-                onClick={() =>
-                  run(async () => {
-                    const refined = await api.refineSummary(
-                      project.id,
-                      summary,
-                      instructions,
-                      token,
-                    );
-                    setSummary(refined.summary);
-                  })
-                }
-              >
-                Refine summary draft
-              </Button>
+              <div className="ml-auto flex w-full max-w-[440px] flex-row items-end gap-2">
+                <GenerationModelSelect kind="text" disabled={busy} />
+                <Button
+                  variant="generation"
+                  className="h-auto min-h-8 min-w-0 flex-[2] py-1 whitespace-normal"
+                  disabled={busy || !summary.trim() || !instructions.trim()}
+                  onClick={() =>
+                    run(async () => {
+                      const refined = await api.refineSummary(
+                        project.id,
+                        summary,
+                        instructions,
+                        token,
+                      );
+                      setSummary(refined.summary);
+                    })
+                  }
+                >
+                  Refine summary draft
+                </Button>
+              </div>
             </div>
           )}
 

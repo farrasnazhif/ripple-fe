@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { GenerationModelSelect } from "@/components/workspace/generation-model-select";
 import { Wallet } from "lucide-react";
 import { api } from "@/lib/api";
 import { operationLabels, parseBudget, usd } from "@/lib/budget";
@@ -64,6 +65,10 @@ export function GenerationBudgetDialog({ projectId, token, operation, onClose, o
       {query.data.limit_cents === null ? <p role="alert">Set this project’s budget first.</p> : estimate <= 0 ? <p role="alert">The administrator needs to configure this cost estimate before generation is available.</p> : estimate > query.data.available_cents ? <p role="alert">This request exceeds the available project budget.</p> : <p className="text-sm">Available after reservation: {usd(query.data.available_cents - estimate)}</p>}
       <p className="text-xs text-muted-foreground">The backend reserves budget before submission. Actual provider charges may differ from this estimate.</p>
     </div>}
-    <div className="flex justify-end gap-2"><Button variant="outline" onClick={onClose}>Cancel</Button><Button variant="generation" disabled={!allowed} onClick={onConfirm}>Confirm generation</Button></div>
+    <div className="flex w-full max-w-[440px] flex-row items-end gap-2">
+      <Button variant="outline" onClick={onClose}>Cancel</Button>
+      <GenerationModelSelect kind={operation} />
+      <Button variant="generation" className="h-auto min-h-8 min-w-0 flex-[2] py-1 whitespace-normal" disabled={!allowed} onClick={onConfirm}>Confirm generation</Button>
+    </div>
   </DialogContent></Dialog>;
 }
