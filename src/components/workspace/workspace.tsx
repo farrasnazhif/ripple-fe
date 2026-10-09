@@ -147,6 +147,7 @@ export function Workspace({
   const current = brief.data;
   const kind = state?.output_type === "image" ? "image" : "video";
   const planTitle = "Storyboard";
+  const styledNodeHeader = selected === "summary" || selected === "storyboard";
   const parts = selected?.split(":");
   const selectedShot = shots.data?.find((s) => s.id === parts?.[0]);
   const selectedKind = parts?.[1] as "image" | "video" | undefined;
@@ -274,8 +275,35 @@ export function Workspace({
         }}
       >
         <DialogContent
-          className={`max-h-[90vh] overflow-y-auto rounded-md p-6 sm:max-w-4xl ${selectedShot || selected === "final" ? "lg:max-w-6xl" : ""}`}
+          className={`max-h-[90vh] rounded-md sm:max-w-4xl ${styledNodeHeader ? "flex flex-col overflow-hidden border border-neutral-200/80 p-0 shadow-2xl" : "overflow-y-auto p-6"} ${selectedShot || selected === "final" ? "lg:max-w-6xl" : ""}`}
         >
+          {styledNodeHeader ? (
+            <>
+              <div className="flex items-center gap-2 px-6 pt-6">
+                <span className="truncate text-xs font-semibold tracking-wider uppercase text-neutral-900">
+                  {project.name}
+                </span>
+              </div>
+              <div className="px-6 pt-1 pb-0">
+                <div className="relative overflow-hidden rounded-md bg-neutral-100 p-6 text-neutral-900">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-0 top-0 h-full w-[60%] bg-neutral-400 opacity-10 [mask-image:url('/vectors/headers/spiral.svg')] [mask-position:right_center] [mask-repeat:no-repeat] [mask-size:cover]"
+                  />
+                  <DialogHeader className="relative z-10 text-left">
+                    <DialogTitle className="text-2xl font-extrabold tracking-tight text-neutral-900">
+                      {selected === "summary" ? "Brief Summary" : planTitle}
+                    </DialogTitle>
+                    <DialogDescription className="mt-0.5 text-sm text-neutral-600">
+                      {selected === "summary"
+                        ? "Review your summarized brief, confirm requirements, and track changes before generating."
+                        : "Review shots, link brief requirements, and track the impact of changes before generating clips."}
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
+              </div>
+            </>
+          ) : (
           <DialogHeader>
             <DialogTitle>
               {selected === "brief"
@@ -296,6 +324,8 @@ export function Workspace({
                 : "Confirm your brief, track changes, and preserve the work that still fits."}
             </DialogDescription>
           </DialogHeader>
+          )}
+          <div className={styledNodeHeader ? "min-h-0 flex-1 overflow-y-auto p-6" : "contents"}>
           {(!current || !state) && <p>Loading project…</p>}
           {current &&
             state &&
@@ -685,6 +715,7 @@ export function Workspace({
               {error.message}
             </p>
           )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
