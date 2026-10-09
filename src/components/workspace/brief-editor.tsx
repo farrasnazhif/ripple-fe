@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BriefAttachmentPreview } from "@/components/brief/brief-attachment-preview";
+import { BriefAssetGallery } from "@/components/brief/brief-asset-gallery";
 import { SelectedBriefFile } from "@/components/project/selected-brief-file";
 import type {
   Brief,
@@ -189,7 +189,7 @@ export function BriefEditor({
             onConfirm={() => (mode === "brief" ? setText("") : setSummary(""))}
             trigger={
               <Button
-                variant="ghost"
+                variant="destructive"
                 className="justify-self-start"
                 disabled={busy || !(mode === "brief" ? text : summary)}
               >
@@ -200,29 +200,12 @@ export function BriefEditor({
           />
           {mode === "brief" && (
             <section className="grid gap-3">
-              <h3 className="font-semibold">Uploaded references</h3>
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {attachments
-                  .filter((f) => !removed.includes(f.id))
-                  .map((file) => (
-                    <li key={file.id} className="grid gap-2">
-                      <ul>
-                        <BriefAttachmentPreview file={file} token={token} />
-                      </ul>
-                      <ConfirmDestructiveAction
-                        title={`Remove “${file.file_name}”?`}
-                        description="This reference will be removed from the next saved brief version. Earlier versions retain access to the original file."
-                        onConfirm={() => setRemoved((v) => [...v, file.id])}
-                        trigger={
-                          <Button variant="outline" size="sm" disabled={busy}>
-                            <Trash2 />
-                            Remove
-                          </Button>
-                        }
-                      />
-                    </li>
-                  ))}
-              </ul>
+              <BriefAssetGallery
+                files={attachments.filter((file) => !removed.includes(file.id))}
+                token={token}
+                busy={busy}
+                onRemove={(id) => setRemoved((current) => [...current, id])}
+              />
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-sm">
                 <Upload />
                 Add files
@@ -240,7 +223,7 @@ export function BriefEditor({
                   }}
                 />
               </label>
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <ul className="grid max-h-80 grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2 overflow-y-auto overscroll-contain">
                 {files.map((file, i) => (
                   <SelectedBriefFile
                     key={i}
@@ -332,7 +315,7 @@ export function BriefEditor({
                   trigger={
                     <Button
                       aria-label={`Remove requirement ${i + 1}`}
-                      variant="ghost"
+                      variant="destructive"
                       size="icon"
                       disabled={busy}
                     >

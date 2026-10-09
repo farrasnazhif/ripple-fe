@@ -210,7 +210,10 @@ export function Workspace({
           </Button>
         </div>
       )}
-      {selected === "brief" && <BriefDetailDialog project={project} token={token} onClose={() => setSelected(null)} />}
+      {selected === "brief" && (
+        <BriefDetailDialog project={project} token={token}
+          onClose={() => setSelected(null)} />
+      )}
       <Dialog
         open={!!selected && selected !== "brief"}
         onOpenChange={(value) => {
@@ -390,7 +393,7 @@ export function Workspace({
                     }
                     trigger={
                       <Button
-                        variant="ghost"
+                        variant="destructive"
                         disabled={rows.length === 1 || action.isPending}
                       >
                         <Trash2 />

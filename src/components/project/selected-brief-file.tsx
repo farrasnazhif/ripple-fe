@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { FileText, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 
 export function SelectedBriefFile({
@@ -31,13 +32,15 @@ export function SelectedBriefFile({
           title={`Remove “${file.name}”?`}
           description="Remove this file from the selected uploads. You can choose it again before saving."
           trigger={
-            <button
+            <Button
               type="button"
+              variant="destructive"
+              size="icon-sm"
               aria-label={`Remove ${file.name}`}
-              className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-md bg-red-500 text-white shadow-sm transition-colors hover:bg-red-600"
+              className="absolute right-2 top-2 z-10 shadow-sm"
             >
               <X className="size-4" strokeWidth={2.5} />
-            </button>
+            </Button>
           }
           onConfirm={onRemove}
         />
@@ -54,13 +57,13 @@ export function SelectedBriefFile({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <FileText className="size-10 text-neutral-400" />
+            <FileText className="size-6 text-neutral-400" />
           </div>
         )}
       </div>
 
-      <div className="flex flex-col items-start gap-2 p-3">
-        <p className="w-full break-words text-xs font-medium">{file.name}</p>
+      <div className="flex min-w-0 flex-col items-start gap-1 p-2">
+        <p title={file.name} className="w-full truncate text-xs font-medium">{file.name}</p>
 
         <small className="text-xs text-emerald-700">
           {uploaded ? "Uploaded" : `${(file.size / 1024).toFixed(0)} KB`}
