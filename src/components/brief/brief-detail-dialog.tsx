@@ -81,14 +81,8 @@ export function BriefDetailDialog({
       }}
     >
       <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-md border border-neutral-200/80 p-0 shadow-2xl sm:max-w-4xl">
-      <div className="px-6 pt-6 flex items-center gap-2">
-        <span className="truncate text-xs font-semibold tracking-wider uppercase text-neutral-900">
-          {project.name}
-        </span>
-      </div>
-
       {/* Rounded Rectangle Header Container */}
-      <div className="px-6 pt-1 pb-0">
+      <div className="shrink-0 px-6 pt-6 pb-0">
         <div className="relative overflow-hidden rounded-md bg-neutral-100 p-6 text-neutral-900">
           
           {/* Dynamic Colorable SVG Mask (Change `bg-neutral-900` to any color e.g., `bg-emerald-600`) */}
