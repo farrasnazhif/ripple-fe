@@ -1,0 +1,93 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FolderKanban, FileText, LogOut, ChevronsUpDown } from "lucide-react";
+import { api } from "@/lib/api";
+import { useAuthToken } from "@/hooks/use-auth-token";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+export function AppSidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { setOpenMobile } = useSidebar();
+  const token = useAuthToken();
+  const user = useQuery({ queryKey: ["auth", token], queryFn: () => api.me(token!), enabled: !!token });
+
+  function signOut() {
+    sessionStorage.removeItem("ripple_token");
+    queryClient.clear();
+    router.replace("/sign-in");
+  }
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" render={<Link href="/project" />} tooltip="Projects" onClick={() => setOpenMobile(false)}>
+              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#345350] text-xl font-black tracking-[-0.12em] text-white">r.</span>
+              <span className="text-base font-bold tracking-tight">Ripple</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton render={<Link href="/project" />} isActive={pathname.startsWith("/project")} tooltip="Projects" onClick={() => setOpenMobile(false)}>
+                  <FolderKanban />
+                  <span>Projects</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton render={<Link href="/briefs" />} isActive={pathname.startsWith("/briefs")} tooltip="Briefs" onClick={() => setOpenMobile(false)}>
+                  <FileText />
+                  <span>Briefs</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<SidebarMenuButton size="lg" tooltip="Account" />}>
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#19b99a] font-bold text-white">{(user.data?.username || user.data?.email || "R").slice(0, 1).toUpperCase()}</span>
+                <span className="flex min-w-0 flex-col text-left leading-tight"><strong className="truncate">{user.data?.username || "Account"}</strong><small className="truncate text-[11px] text-neutral-400">{user.data?.email || ""}</small></span>
+                <ChevronsUpDown className="ml-auto size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start">
+                <DropdownMenuLabel>{user.data?.email || "Account"}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}><LogOut /> Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  );
+}
