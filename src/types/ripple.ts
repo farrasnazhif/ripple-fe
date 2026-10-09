@@ -43,3 +43,6 @@ export type Project = {
   description: string;
   created_at: string;
 };
+
+export type StoryboardShot = { id: string; title: string; prompt: string; position: number };
+export type GenerationJob = { id: string; shot_id: string; request_key: string; kind: "image" | "video"; prompt: string; provider_id: string; status: string; outputs: string[]; created_at: string };

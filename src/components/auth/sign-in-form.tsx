@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
@@ -46,7 +47,7 @@ export function SignInForm() {
       <div className="mb-8 text-4xl font-black tracking-[-0.14em] text-[#1c3c39]">
         r<span className="text-orange-300">.</span> <small className="ml-3 align-middle text-[10px] tracking-[0.21em]">RIPPLE</small>
       </div>
-      <Card className="block w-full max-w-[425px] rounded-2xl border border-emerald-100 bg-white p-9 shadow-xl">
+      <Card className="block w-full max-w-[425px] rounded-md border border-emerald-100 bg-white p-9 shadow-xl">
         <div className="text-[10px] font-extrabold tracking-[0.15em] text-emerald-700">YOUR WORKSPACE AWAITS</div>
         <h1 className="text-4xl font-semibold tracking-tight">
           {mode === "sign-up" ? "Create an account" : "Welcome back"}
@@ -101,7 +102,7 @@ export function SignInForm() {
             </p>
           )}
           {error && (
-            <p className="rounded-lg bg-red-50 p-3 text-xs text-red-700" role="alert">
+            <p className="rounded-md bg-red-50 p-3 text-xs text-red-700" role="alert">
               {error}
             </p>
           )}
@@ -113,8 +114,9 @@ export function SignInForm() {
             {auth.isPending
               ? "Please wait…"
               : mode === "sign-up"
-                ? "Create account →"
-                : "Sign in →"}
+                ? "Create account"
+                : "Sign in"}
+            <ArrowRight />
           </Button>
         </form>
         <div className="mt-6 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
@@ -128,7 +130,7 @@ export function SignInForm() {
                 setError("");
               }}
             >
-              New here? Create an account →
+              New here? Create an account <ArrowRight />
             </Button>
           ) : (
             <Button
@@ -140,7 +142,7 @@ export function SignInForm() {
                 setError("");
               }}
             >
-              Already have an account? Sign in →
+              Already have an account? Sign in <ArrowRight />
             </Button>
           )}
         </div>

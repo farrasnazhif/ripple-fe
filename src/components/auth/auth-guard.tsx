@@ -22,13 +22,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const invalid = session.error instanceof ApiError && session.error.status === 401;
 
   useEffect(() => {
+    if (token === undefined) return;
     if (!token || invalid) {
       if (invalid) sessionStorage.removeItem("ripple_token");
       router.replace(`/sign-in?next=${encodeURIComponent(pathname)}`);
     }
   }, [token, invalid, pathname, router]);
 
-  if (session.isSuccess && !session.isFetching && token) return children;
+  if (session.isSuccess && token) return children;
   if (session.isError && !invalid) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f0f4f0] p-8">

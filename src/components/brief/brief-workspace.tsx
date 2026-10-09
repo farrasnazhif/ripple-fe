@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowRight, ArrowUpRight, FileText, Plus } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -181,7 +182,7 @@ export function BriefWorkspace() {
             WORKSPACE <span className="mx-3 text-neutral-300">/</span> BRIEFS
           </div>
           <div className="flex items-center">
-            <Badge className="h-auto rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] font-bold tracking-widest text-emerald-800">SOURCE MATERIAL</Badge>
+            <Badge className="h-auto rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] font-bold tracking-widest text-emerald-800">SOURCE MATERIAL</Badge>
           </div>
         </header>
         <div className="px-5 pt-10 pb-8 sm:px-11">
@@ -195,20 +196,20 @@ export function BriefWorkspace() {
           </p>
         </div>
         {!token ? (
-          <div className="mx-auto max-w-xl rounded-2xl border border-neutral-200 bg-white px-6 py-16 text-center">
-            <div className="text-4xl text-emerald-600">▤</div>
+          <div className="mx-auto max-w-xl rounded-md border border-neutral-200 bg-white px-6 py-16 text-center">
+            <FileText className="mx-auto size-9 text-emerald-600" />
             <h2 className="text-2xl font-semibold">Sign in to work with briefs</h2>
             <p className="mx-auto my-4 max-w-sm text-neutral-500">
               Briefs and private R2 attachments require an authenticated
               account.
             </p>
-            <Link href="/sign-in" className="inline-flex rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground">
-              Sign in →
+            <Link href="/sign-in" className="inline-flex rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground">
+              Sign in <ArrowRight className="ml-2 size-4" />
             </Link>
           </div>
         ) : (
           <div className="grid items-start gap-5 px-5 pb-9 lg:grid-cols-2 sm:px-11">
-            <Card className="block rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <Card className="block rounded-md border border-neutral-200 bg-white p-6 shadow-sm">
               <div className="text-[10px] font-extrabold tracking-[0.15em] text-emerald-700">01 / SOURCE TEXT</div>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight">Original brief</h2>
               <p className="mb-5 text-xs leading-relaxed text-neutral-500">
@@ -251,7 +252,8 @@ export function BriefWorkspace() {
                     ? "Saving…"
                     : brief
                       ? "Brief saved"
-                      : "Create brief →"}
+                      : "Create brief"}
+                  <ArrowRight />
                 </Button>
                 {brief && (
                   <Button
@@ -276,7 +278,7 @@ export function BriefWorkspace() {
               )}
             </Card>
             <div className="flex flex-col gap-5">
-              <Card className="block rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <Card className="block rounded-md border border-neutral-200 bg-white p-6 shadow-sm">
                 <div className="text-[10px] font-extrabold tracking-[0.15em] text-emerald-700">02 / ATTACHMENTS</div>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight">Reference files</h2>
                 <p className="mb-5 text-xs leading-relaxed text-neutral-500">
@@ -284,9 +286,9 @@ export function BriefWorkspace() {
                   MiB per file.
                 </p>
                 <label
-                  className={`flex min-h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-emerald-200 bg-emerald-50 text-xl text-emerald-700 ${!brief || !!busy ? "cursor-not-allowed opacity-50" : ""}`}
+                  className={`flex min-h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-emerald-200 bg-emerald-50 text-xl text-emerald-700 ${!brief || !!busy ? "cursor-not-allowed opacity-50" : ""}`}
                 >
-                  ＋<strong className="text-xs">Choose a file</strong>
+                  <Plus className="size-5" /><strong className="text-xs">Choose a file</strong>
                   <small className="text-[10px] text-neutral-500">Images, documents, and other brief references</small>
                   <Input
                     className="sr-only"
@@ -303,7 +305,7 @@ export function BriefWorkspace() {
                   <p className="text-xs text-emerald-700">Uploading and verifying…</p>
                 )}
                 {attachmentQuery.error && (
-                  <p className="rounded-lg bg-red-50 p-3 text-xs text-red-700" role="alert">
+                  <p className="rounded-md bg-red-50 p-3 text-xs text-red-700" role="alert">
                     {attachmentQuery.error.message}
                   </p>
                 )}
@@ -314,12 +316,12 @@ export function BriefWorkspace() {
                     variant="ghost"
                     onClick={() => download(item)}
                   >
-                    <span>▤ {item.file_name}</span>
-                    <small className="shrink-0 text-emerald-700">{(item.size_bytes / 1024).toFixed(0)} KB ↗</small>
+                    <span className="flex min-w-0 items-center gap-2"><FileText className="size-4 shrink-0" /><span className="truncate">{item.file_name}</span></span>
+                    <small className="flex shrink-0 items-center gap-1 text-emerald-700">{(item.size_bytes / 1024).toFixed(0)} KB <ArrowUpRight className="size-4" /></small>
                   </Button>
                 ))}
               </Card>
-              <Card className="block rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <Card className="block rounded-md border border-neutral-200 bg-white p-6 shadow-sm">
                 <div className="text-[10px] font-extrabold tracking-[0.15em] text-emerald-700">03 / REVIEW</div>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight">Brief summary</h2>
                 <p className="mb-5 text-xs leading-relaxed text-neutral-500">
@@ -327,7 +329,7 @@ export function BriefWorkspace() {
                   contents are not extracted yet.
                 </p>
                 {brief?.summary ? (
-                  <div className="rounded-xl bg-emerald-50 p-4 leading-relaxed whitespace-pre-wrap text-emerald-900">
+                  <div className="rounded-md bg-emerald-50 p-4 leading-relaxed whitespace-pre-wrap text-emerald-900">
                     <div className="mb-2 text-[10px] font-extrabold tracking-[0.15em] text-emerald-700">CONFIRMED SUMMARY</div>
                     <p>{brief.summary}</p>
                   </div>
@@ -341,7 +343,8 @@ export function BriefWorkspace() {
                     >
                       {busy === "summary"
                         ? "Drafting…"
-                        : "Generate summary draft ↗"}
+                        : "Generate summary draft"}
+                      <ArrowUpRight />
                     </Button>
                     {draft && (
                       <div className="mt-4">
@@ -359,7 +362,8 @@ export function BriefWorkspace() {
                           disabled={!!busy || !draft.trim()}
                           onClick={confirmSummary}
                         >
-                          {busy === "confirm" ? "Saving…" : "Confirm summary →"}
+                          {busy === "confirm" ? "Saving…" : "Confirm summary"}
+                          <ArrowRight />
                         </Button>
                       </div>
                     )}
@@ -370,12 +374,12 @@ export function BriefWorkspace() {
           </div>
         )}
         {error && (
-          <p className="fixed right-6 bottom-6 z-30 max-w-sm rounded-xl bg-red-700 px-5 py-3 text-white shadow-xl" role="alert">
+          <p className="fixed right-6 bottom-6 z-30 max-w-sm rounded-md bg-red-700 px-5 py-3 text-white shadow-xl" role="alert">
             {error}
           </p>
         )}
         {notice && (
-          <p className="fixed right-6 bottom-6 z-30 max-w-sm rounded-xl bg-emerald-700 px-5 py-3 text-white shadow-xl" role="status">
+          <p className="fixed right-6 bottom-6 z-30 max-w-sm rounded-md bg-emerald-700 px-5 py-3 text-white shadow-xl" role="status">
             {notice}
           </p>
         )}

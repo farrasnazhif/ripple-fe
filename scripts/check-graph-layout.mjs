@@ -1,26 +1,48 @@
 import assert from "node:assert/strict";
-import { nodeHeight, nodePosition, nodeWidth, shotHeight } from "../src/lib/graph-layout.ts";
+import { nodeHeight, nodeWidth, projectCanvasNodes } from "../src/lib/graph-layout.ts";
+import { zoomCanvasAt } from "../src/lib/canvas-viewport.ts";
 
-const nodes = [
-  { id: "brief", kind: "brief", index: 0 },
-  { id: "summary", kind: "summary", index: 0 },
-  { id: "storyboard", kind: "storyboard", index: 0 },
-  ...Array.from({ length: 12 }, (_, index) => ({ id: `shot-${index + 1}`, kind: "shot", index })),
-];
+for (const summary of [undefined, "", " \n "]) {
+  assert.deepEqual(projectCanvasNodes("Project", "Original brief", 2, summary).map((node) => node.id), ["brief"]);
+}
+const nodes = projectCanvasNodes("Project", "Original brief", 2, "Confirmed output");
+assert.deepEqual(nodes.map((node) => node.id), ["brief", "summary"]);
+assert.equal(nodes[0].summary, "Original brief");
+assert.equal(nodes[1].summary, "Confirmed output");
 
 for (const [index, node] of nodes.entries()) {
-  const position = nodePosition(node.kind, node.index);
-  const height = node.kind === "shot" ? shotHeight : nodeHeight;
+  const position = node;
   assert(position.x >= 0 && position.y >= 0, `${node.id} is outside the canvas`);
   for (const earlier of nodes.slice(0, index)) {
-    const other = nodePosition(earlier.kind, earlier.index);
-    const otherHeight = earlier.kind === "shot" ? shotHeight : nodeHeight;
+    const other = earlier;
     assert(
       position.x + nodeWidth <= other.x || other.x + nodeWidth <= position.x ||
-      position.y + height <= other.y || other.y + otherHeight <= position.y,
+      position.y + nodeHeight <= other.y || other.y + nodeHeight <= position.y,
       `${node.id} overlaps ${earlier.id}`,
     );
   }
 }
 
-console.log("Project canvas nodes have unique, non-overlapping positions.");
+console.log("Canvas starts with Raw Brief only, adds saved outputs, and has no overlapping nodes.");
+
+const viewport = { x: -120, y: 80, zoom: 0.8 };
+const point = { x: 360, y: 240 };
+for (const requestedZoom of [0.01, 0.5, 1.5, 10]) {
+  const next = zoomCanvasAt(viewport, point, requestedZoom);
+  assert(next.zoom >= 0.25 && next.zoom <= 2);
+  assert.equal((point.x - next.x) / next.zoom, (point.x - viewport.x) / viewport.zoom);
+  assert.equal((point.y - next.y) / next.zoom, (point.y - viewport.y) / viewport.zoom);
+}
+console.log("Canvas zoom stays within bounds and preserves the cursor anchor.");
+
+const shots = [{id: "shot-1", title: "First shot", prompt: "A beach", position: 1}];
+const job = {id: "job-1", shot_id: "shot-1", kind: "image", prompt: "A beach", status: "queued", outputs: []};
+assert.deepEqual(projectCanvasNodes("", "Brief", 0, "Summary", shots, [job]).map(n => n.id), ["brief", "summary", "storyboard"]);
+for (const status of ["failed", "unknown", "in_progress", "completed"]) {
+  assert.equal(projectCanvasNodes("", "Brief", 0, "Summary", shots, [{...job, status}]).length, 3);
+}
+const completed = projectCanvasNodes("", "Brief", 0, "Summary", shots, [{...job, status: "completed", outputs: ["https://example.com/image.png"]}]);
+assert.deepEqual(completed.map(n => n.id), ["brief", "summary", "storyboard", "job-1"]);
+assert.equal(completed[3].parent, "storyboard");
+assert.equal(completed[2].parent, "summary");
+console.log("Storyboard follows saved shots; media nodes require a completed output.");

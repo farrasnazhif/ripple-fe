@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Workspace } from "@/components/workspace/workspace";
 import { api, ApiError } from "@/lib/api";
@@ -22,7 +23,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
       <div className="min-h-screen space-y-4 px-6 py-20 text-neutral-500 sm:px-11">
         <h1 className="text-2xl font-semibold text-neutral-800">{project.error instanceof ApiError && project.error.status === 404 ? "Project not found" : "Could not load project"}</h1>
         <p>{project.error.message}</p>
-        <Link className="mr-4 text-emerald-700" href="/project">← Back to projects</Link>
+        <Link className="mr-4 inline-flex items-center gap-2 text-emerald-700" href="/project"><ArrowLeft className="size-4" /> Back to projects</Link>
         <Button variant="outline" onClick={() => project.refetch()}>Try again</Button>
       </div>
     );

@@ -1,5 +1,5 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import type { Attachment, Brief, Graph, Project } from "@/types/ripple";
+import type { Attachment, Brief, Graph, Project, StoryboardShot, GenerationJob } from "@/types/ripple";
 
 const client = axios.create({
   baseURL: (
@@ -44,6 +44,12 @@ async function request<T>(
 }
 
 export const api = {
+  setBriefText: (id: string, raw_text: string, token: string) => request<null>(`/briefs/${id}/text`, { method: "PUT", data: { raw_text } }, token),
+  storyboard: (id: string, token: string) => request<StoryboardShot[]>(`/projects/${id}/storyboard`, {}, token),
+  saveStoryboard: (id: string, summary: string, shots: {title: string; prompt: string}[], token: string) => request<null>(`/projects/${id}/storyboard`, {method: "POST", data: {summary, shots}}, token),
+  generations: (id: string, token: string) => request<GenerationJob[]>(`/projects/${id}/generations`, {}, token),
+  generate: (id: string, shot: string, kind: "image" | "video", request_key: string, token: string) => request<GenerationJob>(`/projects/${id}/shots/${shot}/generations`, {method: "POST", data: {kind, request_key}}, token),
+  generation: (id: string, job: string, token: string) => request<GenerationJob>(`/projects/${id}/generations/${job}`, {}, token),
   graph: (scenario: string, token: string) =>
     request<Graph>(
       "/demo/graph",
@@ -92,6 +98,8 @@ export const api = {
     ),
   attachments: (id: string, token: string) =>
     request<Attachment[]>(`/briefs/${id}/attachments`, {}, token),
+  attachmentStorageStatus: (token: string) =>
+    request<{ available: boolean }>("/briefs/storage", {}, token),
   startAttachment: (id: string, file: File, token: string) =>
     request<{
       attachment: Attachment;

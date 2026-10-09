@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import axios from "axios";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText, Plus } from "lucide-react";
+import { SelectedBriefFile } from "@/components/project/selected-brief-file";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,8 @@ function ProjectPreview() {
       <rect x="267" y="75" width="80" height="55" rx="9" fill="white" />
       <rect x="141" y="26" width="90" height="19" rx="9" fill="white" />
       <rect x="254" y="26" width="90" height="19" rx="9" fill="white" />
-      <text x="22" y="32" fill="#303d3a" fontSize="8" fontWeight="700">▤ Brief</text>
+      <FileText x="22" y="25" width="7" height="7" stroke="#303d3a" />
+      <text x="32" y="32" fill="#303d3a" fontSize="8" fontWeight="700">Brief</text>
       <text x="22" y="52" fill="#7c8682" fontSize="6">Original creative direction</text>
       <text x="22" y="62" fill="#7c8682" fontSize="6">and source material</text>
       <rect x="21" y="80" width="69" height="12" rx="6" fill="#f8edab" />
@@ -64,7 +66,8 @@ export function ProjectList() {
   });
 
   function addFiles(next: FileList | File[]) {
-    setFiles((current) => [...current, ...Array.from(next)]);
+    const selectedFiles = Array.from(next);
+    setFiles((current) => [...current, ...selectedFiles]);
   }
 
   function setDialogOpen(open: boolean) {
@@ -86,6 +89,10 @@ export function ProjectList() {
     try {
       const invalid = files.find((file) => !file.size || file.size > 25 * 1024 * 1024 || file.name.length > 255 || /[/\\]/.test(file.name));
       if (invalid) throw new Error(`${invalid.name} must have a valid name and be between 1 byte and 25 MiB.`);
+      if (files.length) {
+        const storage = await api.attachmentStorageStatus(token!);
+        if (!storage.available) throw new Error("File uploads are temporarily unavailable. Please try again later.");
+      }
       const project = savedProject ?? await create.mutateAsync();
       setSavedProject(project);
       void queryClient.invalidateQueries({ queryKey: ["projects", token] });
@@ -106,14 +113,10 @@ export function ProjectList() {
 
   return (
     <div className="min-h-[calc(100vh-58px)] bg-white text-neutral-800">
-      <div className="max-w-[1290px] px-6 pt-16 pb-36 sm:px-11 sm:pt-22">
-        <div className="mb-8">
-          <h1 className="text-[clamp(58px,6vw,82px)] leading-[1.08] font-bold tracking-[-0.055em]">Projects</h1>
-          <p className="mt-3 text-[15px] text-neutral-500">Your creative work, all in one place.</p>
-        </div>
+      <div className="max-w-[1290px] px-6 pt-6 pb-24 sm:px-11 sm:pt-8">
 
         <Dialog open={creating} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-h-[90vh] w-[min(560px,calc(100vw-32px))] max-w-[560px] overflow-y-auto rounded-[20px] p-7">
+          <DialogContent className="max-h-[90vh] w-[calc(100vw-32px)] overflow-y-auto rounded-md p-7 sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>New project</DialogTitle>
               <DialogDescription>Give your project a name and add any files for its brief.</DialogDescription>
@@ -127,15 +130,15 @@ export function ProjectList() {
                 Description <span className="font-normal text-neutral-500">(optional)</span>
                 <Textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} disabled={!!savedProject || busy} placeholder="What is this project about?" />
               </Label>
-              <label className="relative grid cursor-pointer justify-items-center gap-2 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-7 text-center text-emerald-800 focus-within:ring-2 focus-within:ring-emerald-500" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (!busy) addFiles(event.dataTransfer.files); }}>
+              <label className="relative grid cursor-pointer justify-items-center gap-2 rounded-md border-2 border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-7 text-center text-emerald-800 focus-within:ring-2 focus-within:ring-emerald-500" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (!busy) addFiles(event.dataTransfer.files); }}>
                 <Upload size={22} />
                 <strong>Drop brief files here or choose files</strong>
-                <span className="text-xs text-neutral-500">Images, documents, and other references · up to 25 MiB each</span>
+                <span className="text-xs text-neutral-500">Choose multiple images or documents, or add more files anytime · up to 25 MiB each</span>
                 <input className="absolute inset-0 h-full w-full cursor-pointer opacity-0" type="file" multiple disabled={busy} onChange={(event) => { if (event.target.files) addFiles(event.target.files); event.target.value = ""; }} />
               </label>
-              {files.length > 0 && <ul className="grid max-h-40 gap-2 overflow-auto">{files.map((file, index) => <li className="flex min-w-0 items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs" key={`${file.name}-${index}`}><FileText size={16} /><span className="min-w-0 flex-1 truncate">{file.name}</span><small className="text-emerald-700">{uploaded.includes(index) ? "Uploaded" : `${(file.size / 1024).toFixed(0)} KB`}</small>{!savedProject && !busy && <button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, item) => item !== index))}><X size={15} /></button>}</li>)}</ul>}
+              {files.length > 0 && <div className="space-y-2"><p className="text-xs text-neutral-500">{files.length} file{files.length === 1 ? "" : "s"} selected</p><ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">{files.map((file, index) => <SelectedBriefFile key={`${file.name}-${index}`} file={file} uploaded={uploaded.includes(index)} onRemove={!savedProject && !busy ? () => setFiles((current) => current.filter((_, item) => item !== index)) : undefined} />)}</ul></div>}
               {savedProject && error && <p className="text-xs text-amber-800">Project saved. Retry to finish uploading the remaining files.</p>}
-              {error && <p className="rounded-lg bg-red-50 p-3 text-xs text-red-700" role="alert">{error}</p>}
+              {error && <p className="rounded-md bg-red-50 p-3 text-xs text-red-700" role="alert">{error}</p>}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} disabled={busy}>Cancel</Button>
                 <Button type="submit" disabled={busy || !name.trim()}>{busy ? "Saving…" : savedProject ? "Retry upload" : "Create project"}</Button>
@@ -160,8 +163,8 @@ export function ProjectList() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {projects.data.map((project) => (
-              <Link className="block rounded-[22px] focus-visible:outline-emerald-500" href={`/project/${project.id}`} key={project.id}>
-                <Card className="block h-full gap-0 overflow-hidden rounded-[22px] border-2 border-neutral-200 p-0 shadow-none transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg">
+              <Link className="block rounded-md focus-visible:outline-emerald-500" href={`/project/${project.id}`} key={project.id}>
+                <Card className="block h-full gap-0 overflow-hidden rounded-md border-2 border-neutral-200 p-0 shadow-none transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg">
                   <ProjectPreview />
                   <div className="px-6 pt-7 pb-9">
                     <h2 className="mb-2 text-[26px] leading-tight font-semibold tracking-tight">{project.name}</h2>
@@ -174,11 +177,11 @@ export function ProjectList() {
         )}
       </div>
       <Button
-        className="fixed right-6 bottom-6 z-10 size-20 rounded-full bg-[#19b99a] text-5xl font-light text-white shadow-xl hover:bg-[#14a98d] sm:right-9 sm:bottom-9 sm:size-27 sm:text-6xl"
+        className="fixed right-6 bottom-6 z-10 size-12 rounded-md bg-[#19b99a] text-white shadow-lg hover:bg-[#14a98d]"
         onClick={() => setCreating(true)}
         aria-label="Create a project"
       >
-        +
+        <Plus className="size-6" />
       </Button>
     </div>
   );
