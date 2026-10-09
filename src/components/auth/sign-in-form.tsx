@@ -6,7 +6,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -17,6 +16,7 @@ export function SignInForm() {
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [error, setError] = useState("");
+
   const auth = useMutation({
     mutationFn: async () => {
       return mode === "sign-up"
@@ -43,110 +43,139 @@ export function SignInForm() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#f0f4f0] p-8">
-      <div className="mb-8 text-4xl font-black tracking-[-0.14em] text-[#1c3c39]">
-        r<span className="text-orange-300">.</span> <small className="ml-3 align-middle text-[10px] tracking-[0.21em]">RIPPLE</small>
-      </div>
-      <Card className="block w-full max-w-[425px] rounded-md border border-emerald-100 bg-white p-9 shadow-xl">
-        <div className="text-[10px] font-extrabold tracking-[0.15em] text-emerald-700">YOUR WORKSPACE AWAITS</div>
-        <h1 className="text-4xl font-semibold tracking-tight">
-          {mode === "sign-up" ? "Create an account" : "Welcome back"}
-          <span className="text-orange-400">.</span>
-        </h1>
-        <p className="leading-relaxed text-neutral-500">
-          Manage briefs, references, and creative direction in one place.
-        </p>
-        <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
-          {mode === "sign-up" && (
-            <Label className="flex flex-col items-stretch gap-2 text-xs font-bold text-[#4d6960]">
-              Username
+    // Grid container
+    <main className="grid min-h-screen grid-cols-1 bg-[#ffffff] lg:grid-cols-[40%_60%]">
+      
+      {/* Left Column: Form with increased outer and vertical padding */}
+      <div className="flex flex-col justify-center px-10 py-16 sm:px-20 lg:px-28 lg:py-24">
+        <div className="mx-auto w-full max-w-[440px]">
+          
+          {/* Logo Replacement */}
+          <img
+            src="/main-logo-black.png"
+            alt="Ripple Logo"
+            className="mb-14 h-9 w-auto object-contain"
+          />
+
+          <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">
+            {mode === "sign-up" ? "Create an account" : "Welcome back."}
+          </h1>
+          {/* <p className="mt-3 leading-relaxed text-neutral-500">
+            Manage briefs, references, and creative direction in one place.
+          </p> */}
+
+          <form onSubmit={submit} className="mt-10 flex flex-col gap-4">
+            {mode === "sign-up" && (
+              <Label className="flex flex-col items-stretch gap-2.5 text-sm font-medium text-[#4d6960]">
+                Username
+                <Input
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  autoComplete="username"
+                  required
+                  maxLength={100}
+                  placeholder="Your username"
+                  className="h-12 bg-white px-4 text-sm"
+                />
+              </Label>
+            )}
+            <Label className="flex flex-col items-stretch gap-2.5 text-sm font-medium text-[#4d6960]">
+              Email address
               <Input
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                autoComplete="username"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
                 required
-                maxLength={100}
-                placeholder="Studio name"
+                placeholder="you@studio.com"
+                className="h-12 bg-white px-4 text-base"
               />
             </Label>
-          )}
-          <Label className="flex flex-col items-stretch gap-2 text-xs font-bold text-[#4d6960]">
-            Email address
-            <Input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              required
-              placeholder="you@studio.com"
-            />
-          </Label>
-          <Label className="flex flex-col items-stretch gap-2 text-xs font-bold text-[#4d6960]">
-            Password
-            <Input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete={
-                mode === "sign-up" ? "new-password" : "current-password"
-              }
-              required
-              minLength={mode === "sign-up" ? 15 : undefined}
-              aria-describedby={mode === "sign-up" ? "password-hint" : undefined}
-              placeholder="••••••••"
-            />
-          </Label>
-          {mode === "sign-up" && (
-            <p id="password-hint" className="-mt-2 text-xs text-muted-foreground">
-              Use at least 15 characters.
-            </p>
-          )}
-          {error && (
-            <p className="rounded-md bg-red-50 p-3 text-xs text-red-700" role="alert">
-              {error}
-            </p>
-          )}
-          <Button
-            type="submit"
-            className="mt-2 w-full"
-            disabled={auth.isPending}
-          >
-            {auth.isPending
-              ? "Please wait…"
-              : mode === "sign-up"
-                ? "Create account"
-                : "Sign in"}
-            <ArrowRight />
-          </Button>
-        </form>
-        <div className="mt-6 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
-          {mode === "sign-in" ? (
+            <Label className="flex flex-col items-stretch gap-2.5 text-sm font-medium text-[#4d6960]">
+              Password
+              <Input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete={
+                  mode === "sign-up" ? "new-password" : "current-password"
+                }
+                required
+                minLength={mode === "sign-up" ? 15 : undefined}
+                aria-describedby={mode === "sign-up" ? "password-hint" : undefined}
+                placeholder="••••••••"
+                className="h-12 bg-white px-4 text-base"
+              />
+            </Label>
+
+            {mode === "sign-up" && (
+              <p id="password-hint" className="-mt-3 text-xs text-muted-foreground">
+                Use at least 15 characters.
+              </p>
+            )}
+
+            {error && (
+              <p className="rounded-md bg-red-50 p-4 text-xs text-red-700" role="alert">
+                {error}
+              </p>
+            )}
+
             <Button
-              className="h-auto p-0 font-semibold text-emerald-700"
-              variant="link"
-              type="button"
-              onClick={() => {
-                setMode("sign-up");
-                setError("");
-              }}
+              type="submit"
+              // className="mt-4 h-13 w-full py-7 text-base font-medium bg-[#16B58B] hover:bg-[#008878] text-white"
+              className="mt-4 h-13 w-full py-7 text-base font-medium text-white"
+              disabled={auth.isPending}
             >
-              New here? Create an account <ArrowRight />
+              {auth.isPending
+                ? "Please wait…"
+                : mode === "sign-up"
+                  ? "Create account"
+                  : "Sign in"}
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-          ) : (
-            <Button
-              className="h-auto p-0 font-semibold text-emerald-700"
-              variant="link"
-              type="button"
-              onClick={() => {
-                setMode("sign-in");
-                setError("");
-              }}
-            >
-              Already have an account? Sign in <ArrowRight />
-            </Button>
-          )}
+          </form>
+
+          {/* Switch Mode Section */}
+          <div className="mt-10 border-t border-neutral-200/80 pt-8 text-center text-xs text-primary">
+            {mode === "sign-in" ? (
+              <Button
+                className="h-auto p-0 font-semibold text-primary hover:text-primary-muted"
+                variant="link"
+                type="button"
+                onClick={() => {
+                  setMode("sign-up");
+                  setError("");
+                }}
+              >
+                New here? Create an account <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            ) : (
+              <Button
+                className="h-auto p-0 font-semibold text-primary hover:text-primary-muted"
+                variant="link"
+                type="button"
+                onClick={() => {
+                  setMode("sign-in");
+                  setError("");
+                }}
+              >
+                Already have an account? Sign in <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
-      </Card>
+      </div>
+
+      {/* Right Column: Image */}
+      <div className="hidden relative bg-neutral-200 lg:block">
+        <img
+          src="/ripple-splash-login.png"
+          alt="Ripple Workspace"
+          className="absolute inset-0 h-full w-full object-cover object-right"
+        />
+        <div className="absolute inset-0 bg-black/5 mix-blend-multiply" />
+      </div>
+
     </main>
   );
 }
