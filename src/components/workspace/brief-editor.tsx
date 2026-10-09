@@ -1,7 +1,19 @@
 "use client";
+
 import { useState } from "react";
 import axios from "axios";
-import { Plus, Trash2, Sparkles, Upload } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Sparkles,
+  Upload,
+  History,
+  FileText,
+  Layers,
+  Info,
+  Clock,
+  Save,
+} from "lucide-react";
 import { api } from "@/lib/api";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
@@ -56,7 +68,9 @@ export function BriefEditor({
   const [files, setFiles] = useState<File[]>([]);
   const [uploaded, setUploaded] = useState<number[]>([]);
   const [history, setHistory] = useState<number | null>(null);
+
   const previous = review.versions.find((v) => v.version === history);
+
   async function save() {
     for (const [index, file] of files.entries()) {
       if (uploaded.includes(index)) continue;
@@ -93,12 +107,24 @@ export function BriefEditor({
     setUploaded([]);
     if (mode === "summary" && summary.trim()) onConfirmed();
   }
+
   return (
-    <div className="grid gap-5">
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <span>Current brief v{brief.version}</span>
+    <div className="flex flex-col gap-6 text-neutral-900">
+      {/* Version Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-neutral-100/70 p-3.5 px-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-7 items-center gap-2 rounded-full bg-white px-3 text-xs font-semibold text-neutral-800 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Version {brief.version}
+          </span>
+          <span className="text-xs font-medium text-neutral-500 capitalize">
+            {mode === "brief" ? "Full Brief Mode" : "Summary Mode"}
+          </span>
+        </div>
+
         <div className="flex items-center gap-2">
-          <span>History</span>
+          <Clock className="h-3.5 w-3.5 text-neutral-400" />
+          <span className="text-xs font-medium text-neutral-500">View History:</span>
           <Select
             items={[
               { value: "current", label: "Current editor" },
@@ -116,7 +142,7 @@ export function BriefEditor({
           >
             <SelectTrigger
               aria-label="Brief version history"
-              className="min-w-36"
+              className="h-8 min-w-36 rounded-lg bg-white text-xs font-medium shadow-2xs"
             >
               <SelectValue />
             </SelectTrigger>
@@ -131,48 +157,97 @@ export function BriefEditor({
           </Select>
         </div>
       </div>
+
+      {/* Read Only History Mode */}
       {previous ? (
-        <section className="grid gap-3 rounded-md border bg-neutral-50 p-4">
-          <h3 className="font-semibold">
-            Brief v{previous.version} · Read only
-          </h3>
-          <p className="whitespace-pre-wrap text-sm">
+        <section className="flex flex-col gap-4 rounded-2xl bg-amber-50/60 p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-semibold text-amber-900 text-sm">
+              <History className="h-4 w-4 text-amber-600" />
+              Brief v{previous.version} Archive
+            </div>
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+              Read Only
+            </span>
+          </div>
+          <p className="whitespace-pre-wrap rounded-xl bg-white/80 p-4 text-xs leading-relaxed text-amber-950 shadow-2xs">
             {mode === "summary" ? previous.summary : previous.raw_text}
           </p>
-          {previous.points.map((p) => (
-            <p key={p.key} className="text-sm">
-              <strong>{p.key}</strong>: {p.value}
-            </p>
-          ))}
-          {previous.attachments.map((id) => (
-            <Button
-              key={id}
-              variant="outline"
-              onClick={() =>
-                run(async () => {
-                  const file = await api.downloadAttachment(
-                    project.brief_id,
-                    id,
-                    token,
-                  );
-                  window.open(
-                    file.download_url,
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
-                })
-              }
-            >
-              Open archived attachment
-            </Button>
-          ))}
+
+          {previous.points.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-amber-900">Requirements in this version</span>
+              {previous.points.map((p) => (
+                <div key={p.key} className="rounded-lg bg-white/60 p-2.5 text-xs">
+                  <strong className="font-semibold text-amber-900">{p.key}:</strong> {p.value}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {previous.attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {previous.attachments.map((id) => (
+                <Button
+                  key={id}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 bg-white text-xs font-medium text-amber-900 hover:bg-amber-100/50"
+                  onClick={() =>
+                    run(async () => {
+                      const file = await api.downloadAttachment(
+                        project.brief_id,
+                        id,
+                        token,
+                      );
+                      window.open(
+                        file.download_url,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                    })
+                  }
+                >
+                  Open archived attachment
+                </Button>
+              ))}
+            </div>
+          )}
         </section>
       ) : (
         <>
-          <label className="grid gap-2 text-sm">
-            {mode === "brief" ? "Brief content" : "Confirmed summary"}
+          {/* STEP 1: Main Content */}
+          <div className="flex flex-col gap-3 rounded-2xl bg-neutral-50/80 p-5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase text-neutral-600 tracking-wider">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-800">1</span>
+                <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                {mode === "brief" ? "Brief Description" : "Confirmed Summary"}
+              </label>
+
+              {mode === "summary" && (
+                <ConfirmDestructiveAction
+                  title="Clear summary?"
+                  description="This clears the text in your current draft. Saving creates a new version; previous saved versions stay in history."
+                  confirmLabel="Clear text"
+                  onConfirm={() => setSummary("")}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs font-medium text-red-600 hover:bg-red-50"
+                      disabled={busy || !summary}
+                    >
+                      <Trash2 className="mr-1 h-3.5 w-3.5" />
+                      Clear summary
+                    </Button>
+                  }
+                />
+              )}
+            </div>
+
             <Textarea
-              className="min-h-48"
+              className="min-h-44 rounded-xl bg-white p-3.5 text-sm leading-relaxed text-neutral-900 shadow-2xs focus:ring-2 focus:ring-emerald-500/20"
               maxLength={100000}
               value={mode === "brief" ? text : summary}
               onChange={(e) =>
@@ -180,37 +255,44 @@ export function BriefEditor({
                   ? setText(e.target.value)
                   : setSummary(e.target.value)
               }
-            />
-          </label>
-          {mode === "summary" && (
-            <ConfirmDestructiveAction
-              title="Clear summary?"
-              description="This clears the text in your current draft. Saving creates a new version; previous saved versions stay in history."
-              confirmLabel="Clear text"
-              onConfirm={() => setSummary("")}
-              trigger={
-                <Button
-                  variant="destructive"
-                  className="justify-self-start"
-                  disabled={busy || !summary}
-                >
-                  <Trash2 />
-                  Clear summary
-                </Button>
+              placeholder={
+                mode === "brief"
+                  ? "Type your detailed project goals, visual style, background, or requirements here..."
+                  : "Type or generate your confirmed brief summary..."
               }
             />
-          )}
+          </div>
+
+          {/* STEP 2: Attachments */}
           {mode === "brief" && (
-            <section className="grid gap-3">
+            <div className="flex flex-col gap-4 rounded-2xl bg-neutral-50/80 p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-xs font-bold uppercase text-neutral-600 tracking-wider">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-800">2</span>
+                  <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                  Reference Files & Images
+                </h3>
+              </div>
+
               <BriefAssetGallery
                 files={attachments.filter((file) => !removed.includes(file.id))}
                 token={token}
                 busy={busy}
                 onRemove={(id) => setRemoved((current) => [...current, id])}
               />
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-sm">
-                <Upload />
-                Add files
+
+              <label className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-neutral-200 bg-white p-6 text-center transition-all hover:bg-emerald-50/30">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-transform group-hover:scale-105">
+                  <Upload className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-neutral-800">
+                    Upload new reference files
+                  </p>
+                  <p className="mt-0.5 text-xs text-neutral-400">
+                    Drag files here or click to browse (up to 25MB each)
+                  </p>
+                </div>
                 <input
                   type="file"
                   multiple
@@ -225,207 +307,252 @@ export function BriefEditor({
                   }}
                 />
               </label>
-              <ul className="grid max-h-80 grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2 overflow-y-auto overscroll-contain">
-                {files.map((file, i) => (
-                  <SelectedBriefFile
-                    key={i}
-                    file={file}
-                    uploaded={uploaded.includes(i)}
-                    onRemove={
-                      busy || uploaded.length > 0
-                        ? undefined
-                        : () => setFiles((v) => v.filter((_, j) => j !== i))
-                    }
-                  />
-                ))}
-              </ul>
-              <p className="text-xs text-neutral-500">
-                Removed references stay accessible in saved versions. New files
-                are uploaded when you save.
+
+              {files.length > 0 && (
+                <ul className="grid max-h-80 grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2 overflow-y-auto overscroll-contain">
+                  {files.map((file, i) => (
+                    <SelectedBriefFile
+                      key={i}
+                      file={file}
+                      uploaded={uploaded.includes(i)}
+                      onRemove={
+                        busy || uploaded.length > 0
+                          ? undefined
+                          : () => setFiles((v) => v.filter((_, j) => j !== i))
+                      }
+                    />
+                  ))}
+                </ul>
+              )}
+
+              <p className="flex items-center gap-1.5 text-xs text-neutral-400">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                Removed files remain preserved in earlier saved history versions.
               </p>
-            </section>
+            </div>
           )}
-          <section className="grid gap-3">
-            <h3 className="font-semibold">Confirmed brief requirements</h3>
-            <p className="text-sm text-neutral-500">
-              Global requirements affect every shot. Local requirements affect
-              only shots you link in the plan. Confirm these before generating
-              so changes can be traced.
-            </p>
-            {points.map((point, i) => (
-              <div
-                key={i}
-                className="grid gap-2 rounded-md border p-3 sm:grid-cols-[1fr_2fr_auto_auto]"
-              >
-                <Input
-                  aria-label={`Requirement ${i + 1} key`}
-                  value={point.key}
-                  maxLength={80}
-                  placeholder="lighting"
-                  onChange={(e) =>
-                    setPoints((v) =>
-                      v.map((p, j) =>
-                        i === j ? { ...p, key: e.target.value } : p,
-                      ),
-                    )
-                  }
-                />
-                <Input
-                  aria-label={`Requirement ${i + 1} value`}
-                  value={point.value}
-                  maxLength={2000}
-                  placeholder="Warm morning light"
-                  onChange={(e) =>
-                    setPoints((v) =>
-                      v.map((p, j) =>
-                        i === j ? { ...p, value: e.target.value } : p,
-                      ),
-                    )
-                  }
-                />
-                <Select
-                  items={[
-                    { value: "local", label: "Local" },
-                    { value: "global", label: "Global" },
-                  ]}
-                  value={point.scope}
-                  onValueChange={(value) => {
-                    if (value === "local" || value === "global")
-                      setPoints((v) =>
-                        v.map((p, j) => (i === j ? { ...p, scope: value } : p)),
-                      );
-                  }}
-                  disabled={busy}
+
+          {/* STEP 3: Requirements */}
+          <div className="flex flex-col gap-4 rounded-2xl bg-neutral-50/80 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="flex items-center gap-2 text-xs font-bold uppercase text-neutral-600 tracking-wider">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-800">
+                    {mode === "brief" ? "3" : "2"}
+                  </span>
+                  <Layers className="h-3.5 w-3.5 text-emerald-600" />
+                  Key Requirements
+                </h3>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Define guidelines for your team. Global rules apply everywhere; local rules apply only to tagged scenes.
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 shadow-2xs">
+                {points.length} {points.length === 1 ? "rule" : "rules"}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {points.map((point, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col gap-2 rounded-xl bg-white p-3 shadow-2xs sm:flex-row sm:items-center"
                 >
-                  <SelectTrigger
-                    aria-label={`Requirement ${i + 1} scope`}
-                    className="w-full sm:min-w-24"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="local">Local</SelectItem>
-                    <SelectItem value="global">Global</SelectItem>
-                  </SelectContent>
-                </Select>
-                <ConfirmDestructiveAction
-                  title={`Remove requirement “${point.key || i + 1}”?`}
-                  description="Removing a requirement may affect linked shots when you save the brief. Previous saved versions remain in history."
-                  onConfirm={() =>
-                    setPoints((v) => v.filter((_, j) => i !== j))
-                  }
-                  trigger={
-                    <Button
-                      aria-label={`Remove requirement ${i + 1}`}
-                      variant="destructive"
-                      size="icon"
+                  {/* Category Name */}
+                  <div className="sm:w-1/3">
+                    <Input
+                      aria-label={`Requirement ${i + 1} key`}
+                      value={point.key}
+                      maxLength={80}
+                      placeholder="Category (e.g. Lighting)"
+                      className="h-9 rounded-lg bg-neutral-50/80 text-xs font-semibold placeholder:text-neutral-400"
+                      onChange={(e) =>
+                        setPoints((v) =>
+                          v.map((p, j) =>
+                            i === j ? { ...p, key: e.target.value } : p,
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+
+                  {/* Guideline Description */}
+                  <div className="flex-1">
+                    <Input
+                      aria-label={`Requirement ${i + 1} value`}
+                      value={point.value}
+                      maxLength={2000}
+                      placeholder="Guideline (e.g. Warm sunlight through blinds)"
+                      className="h-9 rounded-lg bg-neutral-50/80 text-xs placeholder:text-neutral-400"
+                      onChange={(e) =>
+                        setPoints((v) =>
+                          v.map((p, j) =>
+                            i === j ? { ...p, value: e.target.value } : p,
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+
+                  {/* Scope Selector & Actions */}
+                  <div className="flex items-center justify-end gap-2">
+                    <Select
+                      items={[
+                        { value: "local", label: "Local" },
+                        { value: "global", label: "Global" },
+                      ]}
+                      value={point.scope}
+                      onValueChange={(value) => {
+                        if (value === "local" || value === "global")
+                          setPoints((v) =>
+                            v.map((p, j) =>
+                              i === j ? { ...p, scope: value } : p,
+                            ),
+                          );
+                      }}
                       disabled={busy}
                     >
-                      <Trash2 />
-                    </Button>
-                  }
-                />
-              </div>
-            ))}
+                      <SelectTrigger
+                        aria-label={`Requirement ${i + 1} scope`}
+                        className="h-9 w-full sm:w-24 rounded-lg bg-neutral-50/80 text-xs font-medium"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="local">Local</SelectItem>
+                        <SelectItem value="global">Global</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <ConfirmDestructiveAction
+                      title={`Remove requirement “${point.key || i + 1}”?`}
+                      description="Removing a requirement may affect linked shots when you save the brief. Previous saved versions remain in history."
+                      onConfirm={() =>
+                        setPoints((v) => v.filter((_, j) => i !== j))
+                      }
+                      trigger={
+                        <Button
+                          aria-label={`Remove requirement ${i + 1}`}
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-neutral-400 hover:bg-red-50 hover:text-red-600"
+                          disabled={busy}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <Button
               variant="outline"
-              className="justify-self-start"
+              size="sm"
+              className="h-9 gap-1.5 self-start rounded-xl bg-white text-xs font-semibold text-neutral-700 shadow-2xs hover:bg-neutral-100"
               disabled={busy || points.length >= 50}
               onClick={() =>
-                setPoints((v) => [...v, { key: "", value: "", scope: "local" }])
+                setPoints((v) => [
+                  ...v,
+                  { key: "", value: "", scope: "local" },
+                ])
               }
             >
-              <Plus />
-              Add requirement
+              <Plus className="h-3.5 w-3.5" />
+              Add requirement rule
             </Button>
-          </section>
-          <label className="grid gap-2 text-sm">
-            Change note
-            <Input
-              value={note}
-              maxLength={2000}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Explain what changed"
-            />
-          </label>
-          <Button
-            disabled={
-              busy || points.some((p) => !p.key.trim() || !p.value.trim())
-            }
-            onClick={() => run(save)}
-          >
-            {busy
-              ? "Saving…"
-              : mode === "summary"
-                ? "Confirm new summary version"
-                : "Save brief version"}
-          </Button>
+          </div>
+
+          {/* STEP 4: AI Tools */}
           {mode === "brief" && (
-            <Button
-              variant="generation"
-              disabled={
-                busy ||
-                files.some((_, i) => !uploaded.includes(i)) ||
-                (!text.trim() && !attachments.length)
-              }
-              onClick={() =>
-                run(async () => {
-                  if (text !== brief.raw_text || removed.length > 0) {
-                    await api.editBrief(
-                      project.id,
-                      {
-                        expected_version: brief.version,
-                        raw_text: text,
-                        summary: "",
-                        points,
-                        remove_attachments: removed,
-                        note: "Source saved for summary",
-                      },
-                      token,
-                    );
-                    await refresh();
-                    setRemoved([]);
+            <div className="flex flex-col gap-4 rounded-2xl bg-emerald-50/40 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">4</span>
+                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+                      AI Summary Assistant
+                    </h4>
+                    <p className="text-xs text-neutral-500">
+                      Auto-generate a concise brief summary from your text and reference attachments.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="generation"
+                  disabled={
+                    busy ||
+                    files.some((_, i) => !uploaded.includes(i)) ||
+                    (!text.trim() && !attachments.length)
                   }
-                  const result = await api.draftSummary(
-                    project.brief_id,
-                    token,
-                  );
-                  setSummary(result.summary);
-                })
-              }
-            >
-              <Sparkles />
-              Generate summary with ChatGPT
-            </Button>
-          )}
-          {mode === "brief" && (
-            <>
-              <label className="grid gap-2 text-sm">
-                Summary draft (write manually or generate above)
+                  onClick={() =>
+                    run(async () => {
+                      if (text !== brief.raw_text || removed.length > 0) {
+                        await api.editBrief(
+                          project.id,
+                          {
+                            expected_version: brief.version,
+                            raw_text: text,
+                            summary: "",
+                            points,
+                            remove_attachments: removed,
+                            note: "Source saved for summary",
+                          },
+                          token,
+                        );
+                        await refresh();
+                        setRemoved([]);
+                      }
+                      const result = await api.draftSummary(
+                        project.brief_id,
+                        token,
+                      );
+                      setSummary(result.summary);
+                    })
+                  }
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Generate summary with ChatGPT
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-700">
+                  Summary Draft
+                </label>
                 <Textarea
-                  className="min-h-40"
+                  className="min-h-28 rounded-xl bg-white p-3 text-xs leading-relaxed text-neutral-900 shadow-2xs"
                   value={summary}
                   maxLength={100000}
+                  placeholder="Your generated or manual summary will appear here..."
                   onChange={(e) => setSummary(e.target.value)}
                 />
-              </label>
-              <p className="text-sm text-neutral-500">
-                Save this brief version to confirm the summary, then open Brief
-                Summary to choose image or video.
-              </p>
-            </>
+                <p className="text-xs text-neutral-400">
+                  Save this brief version to confirm your draft, then switch to Summary Mode to refine options.
+                </p>
+              </div>
+            </div>
           )}
+
           {mode === "summary" && (
-            <>
-              <label className="grid gap-2 text-sm">
-                Refinement instructions
+            <div className="flex flex-col gap-4 rounded-2xl bg-emerald-50/40 p-5">
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-900">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                  Refinement Instructions
+                </label>
                 <Textarea
                   value={instructions}
                   maxLength={2000}
+                  className="min-h-24 rounded-xl bg-white p-3 text-xs shadow-2xs"
                   onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="Explain what the summary should clarify"
+                  placeholder="Explain what the AI should refine or rewrite..."
                 />
-              </label>
+              </div>
+
               <Button
                 variant="generation"
                 disabled={busy || !summary.trim() || !instructions.trim()}
@@ -441,11 +568,39 @@ export function BriefEditor({
                   })
                 }
               >
-                <Sparkles />
+                <Sparkles className="h-3.5 w-3.5" />
                 Refine summary draft
               </Button>
-            </>
+            </div>
           )}
+
+          {/* STEP 5: Save Actions Bar */}
+          <div className="flex flex-col gap-3 rounded-2xl bg-neutral-100/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <Input
+                value={note}
+                maxLength={2000}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Add a revision note (e.g. Updated visual reference links)"
+                className="h-10 rounded-xl bg-white text-xs placeholder:text-neutral-400 shadow-2xs"
+              />
+            </div>
+
+            <Button
+              disabled={
+                busy || points.some((p) => !p.key.trim() || !p.value.trim())
+              }
+              onClick={() => run(save)}
+              className="h-10 gap-2 rounded-xl bg-neutral-900 px-6 text-xs font-bold text-white shadow-sm hover:bg-neutral-800 shrink-0"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {busy
+                ? "Saving..."
+                : mode === "summary"
+                  ? "Confirm & Save Summary"
+                  : "Save Brief Version"}
+            </Button>
+          </div>
         </>
       )}
     </div>
