@@ -80,7 +80,7 @@ export function BriefDetailDialog({
         if (!open && !action.isPending) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-2xl border border-neutral-200/80 p-0 shadow-2xl sm:max-w-4xl">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-md border border-neutral-200/80 p-0 shadow-2xl sm:max-w-4xl">
       <div className="px-6 pt-6 flex items-center gap-2">
         <span className="truncate text-xs font-semibold tracking-wider uppercase text-neutral-900">
           {project.name}
@@ -89,7 +89,7 @@ export function BriefDetailDialog({
 
       {/* Rounded Rectangle Header Container */}
       <div className="px-6 pt-1 pb-0">
-        <div className="relative overflow-hidden rounded-2xl bg-neutral-100 p-6 text-neutral-900">
+        <div className="relative overflow-hidden rounded-md bg-neutral-100 p-6 text-neutral-900">
           
           {/* Dynamic Colorable SVG Mask (Change `bg-neutral-900` to any color e.g., `bg-emerald-600`) */}
           <div
@@ -134,14 +134,14 @@ export function BriefDetailDialog({
 
           {/* Toast / Notification Banners */}
           {action.isSuccess && (
-            <div role="status" className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 p-3.5 text-sm font-medium text-emerald-800 border border-emerald-200/60">
+            <div role="status" className="mt-4 flex items-center gap-2 rounded-md bg-emerald-50 p-3.5 text-sm font-medium text-emerald-800 border border-emerald-200/60">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
               Brief successfully updated.
             </div>
           )}
 
           {error && (
-            <div role="alert" className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-red-50 p-3.5 text-sm text-red-800 border border-red-200/60">
+            <div role="alert" className="mt-4 flex items-center justify-between gap-3 rounded-md bg-red-50 p-3.5 text-sm text-red-800 border border-red-200/60">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
                 <span>{error.message}</span>
