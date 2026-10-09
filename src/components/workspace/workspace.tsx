@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { GraphCanvas } from "@/components/workspace/graph-canvas";
+import { BriefDetailDialog } from "@/components/brief/brief-detail-dialog";
 import { BriefEditor } from "@/components/workspace/brief-editor";
 import { MediaReview, MediaPreview } from "@/components/workspace/media-review";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
@@ -209,8 +210,9 @@ export function Workspace({
           </Button>
         </div>
       )}
+      {selected === "brief" && <BriefDetailDialog project={project} token={token} onClose={() => setSelected(null)} />}
       <Dialog
-        open={!!selected}
+        open={!!selected && selected !== "brief"}
         onOpenChange={(value) => {
           if (!value && !action.isPending) {
             setSelected(null);
@@ -244,7 +246,7 @@ export function Workspace({
           {(!current || !state) && <p>Loading project…</p>}
           {current &&
             state &&
-            (selected === "brief" || selected === "summary") &&
+            selected === "summary" &&
             !planning && (
               <>
                 <BriefEditor
