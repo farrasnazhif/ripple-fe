@@ -3,6 +3,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Plus, Trash2, Sparkles, Upload } from "lucide-react";
 import { api } from "@/lib/api";
+import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -181,15 +182,22 @@ export function BriefEditor({
               }
             />
           </label>
-          <Button
-            variant="ghost"
-            className="justify-self-start"
-            disabled={busy}
-            onClick={() => (mode === "brief" ? setText("") : setSummary(""))}
-          >
-            <Trash2 />
-            Clear {mode === "brief" ? "content" : "summary"}
-          </Button>
+          <ConfirmDestructiveAction
+            title={`Clear ${mode === "brief" ? "brief content" : "summary"}?`}
+            description="This clears the text in your current draft. Saving creates a new version; previous saved versions stay in history."
+            confirmLabel="Clear text"
+            onConfirm={() => (mode === "brief" ? setText("") : setSummary(""))}
+            trigger={
+              <Button
+                variant="ghost"
+                className="justify-self-start"
+                disabled={busy || !(mode === "brief" ? text : summary)}
+              >
+                <Trash2 />
+                Clear {mode === "brief" ? "content" : "summary"}
+              </Button>
+            }
+          />
           {mode === "brief" && (
             <section className="grid gap-3">
               <h3 className="font-semibold">Uploaded references</h3>
@@ -201,15 +209,17 @@ export function BriefEditor({
                       <ul>
                         <BriefAttachmentPreview file={file} token={token} />
                       </ul>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => setRemoved((v) => [...v, file.id])}
-                      >
-                        <Trash2 />
-                        Remove
-                      </Button>
+                      <ConfirmDestructiveAction
+                        title={`Remove “${file.file_name}”?`}
+                        description="This reference will be removed from the next saved brief version. Earlier versions retain access to the original file."
+                        onConfirm={() => setRemoved((v) => [...v, file.id])}
+                        trigger={
+                          <Button variant="outline" size="sm" disabled={busy}>
+                            <Trash2 />
+                            Remove
+                          </Button>
+                        }
+                      />
                     </li>
                   ))}
               </ul>
@@ -313,14 +323,23 @@ export function BriefEditor({
                     <SelectItem value="global">Global</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  aria-label={`Remove requirement ${i + 1}`}
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setPoints((v) => v.filter((_, j) => i !== j))}
-                >
-                  <Trash2 />
-                </Button>
+                <ConfirmDestructiveAction
+                  title={`Remove requirement “${point.key || i + 1}”?`}
+                  description="Removing a requirement may affect linked shots when you save the brief. Previous saved versions remain in history."
+                  onConfirm={() =>
+                    setPoints((v) => v.filter((_, j) => i !== j))
+                  }
+                  trigger={
+                    <Button
+                      aria-label={`Remove requirement ${i + 1}`}
+                      variant="ghost"
+                      size="icon"
+                      disabled={busy}
+                    >
+                      <Trash2 />
+                    </Button>
+                  }
+                />
               </div>
             ))}
             <Button

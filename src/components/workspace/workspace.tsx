@@ -14,6 +14,7 @@ import {
 import { GraphCanvas } from "@/components/workspace/graph-canvas";
 import { BriefEditor } from "@/components/workspace/brief-editor";
 import { MediaReview, MediaPreview } from "@/components/workspace/media-review";
+import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -379,14 +380,22 @@ export function Workspace({
                       )
                     }
                   />
-                  <Button
-                    variant="ghost"
-                    disabled={rows.length === 1 || action.isPending}
-                    onClick={() => setRows((v) => v.filter((_, j) => i !== j))}
-                  >
-                    <Trash2 />
-                    Remove
-                  </Button>
+                  <ConfirmDestructiveAction
+                    title={`Remove “${row.title || `Shot ${i + 1}`}”?`}
+                    description="This removes the shot and its prompt from the unsaved plan. You will need to add it again if you change your mind."
+                    onConfirm={() =>
+                      setRows((v) => v.filter((_, j) => i !== j))
+                    }
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        disabled={rows.length === 1 || action.isPending}
+                      >
+                        <Trash2 />
+                        Remove
+                      </Button>
+                    }
+                  />
                 </fieldset>
               ))}
               <div className="flex gap-2">

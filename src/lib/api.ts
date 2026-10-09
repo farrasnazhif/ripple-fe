@@ -54,6 +54,19 @@ async function request<T>(
 }
 
 export const api = {
+  updateProject: (
+    id: string,
+    name: string,
+    description: string,
+    token: string,
+  ) =>
+    request<Project>(
+      `/projects/${id}`,
+      { method: "PATCH", data: { name, description } },
+      token,
+    ),
+  deleteProject: (id: string, token: string) =>
+    request<null>(`/projects/${id}`, { method: "DELETE" }, token),
   review: (id: string, token: string) =>
     request<ProjectReview>(`/projects/${id}/review`, {}, token),
   editBrief: (id: string, data: BriefEdit, token: string) =>

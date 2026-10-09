@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import axios from "axios";
-import { Upload, FileText, Plus, Hexagon, ArrowUpRight } from "lucide-react";
+import { Upload, Plus, Pencil, Trash2 } from "lucide-react";
 import { SelectedBriefFile } from "@/components/project/selected-brief-file";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuthToken } from "@/hooks/use-auth-token";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
+import { ProjectEditDialog } from "@/components/project/project-edit-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +37,7 @@ export function ProjectList() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Project | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -248,50 +258,105 @@ export function ProjectList() {
             <Button onClick={() => setCreating(true)}>Create a project</Button>
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {projects.data.map((project) => (
-              <Link
-                key={project.id}
-                href={`/project/${project.id}`}
-                className="block rounded-md focus-visible:outline-emerald-500"
-              >
-                <Card
-                  className="
-        flex h-full flex-col justify-between gap-2
-        rounded-md border border-neutral-200/80
-        bg-white px-3 py-3
-        transition-all duration-200
-      "
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f6f6f9] px-2 py-2">
-                      <Hexagon
-                        className="size-5 shrink-0 text-neutral-500"
-                        strokeWidth={1.8}
-                      />
-
-                      <h2 className="truncate text-[17px] font-medium tracking-tight text-neutral-800">
+          <div className="overflow-hidden rounded-md border">
+            <Table aria-label="Projects">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Created by</TableHead>
+                  <TableHead>Created at</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projects.data.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/project/${project.id}`}
+                        title={project.name}
+                        className="block max-w-64 truncate text-primary hover:underline"
+                      >
                         {project.name}
-                      </h2>
-                    </div>
-
-                    <ArrowUpRight className="size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-emerald-500" />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* <FileText className="size-4 shrink-0 text-neutral-400" /> */}
-
-                    <p className="line-clamp-2 text-sm leading-relaxed text-neutral-500">
-                      {project.description ||
-                        "Open this project to explore its canvas."}
-                    </p>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <p
+                        className="line-clamp-2 max-w-96 min-w-40 whitespace-normal text-muted-foreground"
+                        title={project.description}
+                      >
+                        {project.description || "No description"}
+                      </p>
+                    </TableCell>
+                    <TableCell>{project.created_by}</TableCell>
+                    <TableCell>
+                      <time
+                        dateTime={project.created_at}
+                        title={new Date(project.created_at).toLocaleString(
+                          "en-US",
+                        )}
+                      >
+                        {new Date(project.created_at).toLocaleDateString(
+                          "en-US",
+                          { year: "numeric", month: "short", day: "numeric" },
+                        )}
+                      </time>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label={`Edit ${project.name}`}
+                          onClick={() => setEditing(project)}
+                        >
+                          <Pencil />
+                          Edit
+                        </Button>
+                        <ConfirmDestructiveAction
+                          title={`Delete “${project.name}”?`}
+                          description="This permanently deletes the project, its brief history, storyboard, generations, decisions, and final outputs. This cannot be undone."
+                          confirmLabel="Delete project"
+                          trigger={
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              aria-label={`Delete ${project.name}`}
+                            >
+                              <Trash2 />
+                              Delete
+                            </Button>
+                          }
+                          onConfirm={async () => {
+                            await api.deleteProject(project.id, token!);
+                            queryClient.removeQueries({
+                              predicate: (query) =>
+                                query.queryKey.includes(project.id) ||
+                                query.queryKey.includes(project.brief_id),
+                            });
+                            await queryClient.invalidateQueries({
+                              queryKey: ["projects", token],
+                            });
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
+      {editing && token && (
+        <ProjectEditDialog
+          key={editing.id}
+          project={editing}
+          token={token}
+          onClose={() => setEditing(null)}
+        />
+      )}
       <Button
         className="fixed right-6 bottom-6 z-10 size-12 rounded-md bg-[#19b99a] text-white shadow-lg hover:bg-[#14a98d]"
         onClick={() => setCreating(true)}

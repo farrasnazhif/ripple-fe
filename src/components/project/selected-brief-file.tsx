@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { FileText, X } from "lucide-react";
+import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 
 export function SelectedBriefFile({
   file,
@@ -26,14 +27,20 @@ export function SelectedBriefFile({
   return (
     <li className="relative flex min-w-0 flex-col overflow-hidden rounded-md border border-neutral-200">
       {onRemove && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Remove ${file.name}`}
-          className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-md bg-red-500 text-white shadow-sm transition-colors hover:bg-red-600"
-        >
-          <X className="size-4" strokeWidth={2.5} />
-        </button>
+        <ConfirmDestructiveAction
+          title={`Remove “${file.name}”?`}
+          description="Remove this file from the selected uploads. You can choose it again before saving."
+          trigger={
+            <button
+              type="button"
+              aria-label={`Remove ${file.name}`}
+              className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-md bg-red-500 text-white shadow-sm transition-colors hover:bg-red-600"
+            >
+              <X className="size-4" strokeWidth={2.5} />
+            </button>
+          }
+          onConfirm={onRemove}
+        />
       )}
 
       <div className="relative aspect-square w-full overflow-hidden bg-neutral-50">

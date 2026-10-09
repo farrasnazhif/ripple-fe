@@ -37,6 +37,7 @@ export type Attachment = {
 };
 
 export type Project = {
+  created_by: string;
   id: string;
   brief_id: string;
   name: string;
