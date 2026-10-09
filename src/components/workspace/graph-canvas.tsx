@@ -321,25 +321,25 @@ export function GraphCanvas({
           {storageError}
         </p>
       )}
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs shadow-lg">
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-xs shadow-lg">
         <Button
           type="button"
           variant="outline"
-          size="icon-sm"
+          size="icon-xs"
           aria-label="Zoom out"
           onClick={() => zoomBy(-0.1)}
         >
-          <Minus size={16} />
+          <Minus size={12} />
         </Button>
         <span>{Math.round(viewport.zoom * 100)}%</span>
         <Button
           type="button"
           variant="outline"
-          size="icon-sm"
+          size="icon-xs"
           aria-label="Zoom in"
           onClick={() => zoomBy(0.1)}
         >
-          <Plus size={16} />
+          <Plus size={12} />
         </Button>
       </div>
     </section>
