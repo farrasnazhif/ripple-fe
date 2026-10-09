@@ -29,6 +29,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -52,21 +53,14 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              render={<Link href="/project" />}
-              tooltip="Projects"
-              onClick={() => setOpenMobile(false)}
-            >
-              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-[#345350] text-xl font-black tracking-[-0.12em] text-white">
-                r.
-              </span>
-              <span className="text-base font-bold tracking-tight">Ripple</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="py-4 px-2 flex justify-start">
+          <Image
+            width={100}
+            height={100}
+            alt="Main Logo"
+            src="/main-logo.png"
+          />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
