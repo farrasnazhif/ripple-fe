@@ -41,6 +41,8 @@ export function ProjectList() {
   const [editing, setEditing] = useState<Project | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [briefText, setBriefText] = useState("");
+  const [briefSaved, setBriefSaved] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [uploaded, setUploaded] = useState<number[]>([]);
   const [savedProject, setSavedProject] = useState<Project | null>(null);
@@ -64,6 +66,8 @@ export function ProjectList() {
     if (!open && !busy) {
       setName("");
       setDescription("");
+      setBriefText("");
+      setBriefSaved(false);
       setFiles([]);
       setUploaded([]);
       setSavedProject(null);
@@ -97,6 +101,10 @@ export function ProjectList() {
       }
       const project = savedProject ?? (await create.mutateAsync());
       setSavedProject(project);
+      if (!briefSaved) {
+        await api.setBriefText(project.brief_id, briefText.trim(), token!);
+        setBriefSaved(true);
+      }
       void queryClient.invalidateQueries({ queryKey: ["projects", token] });
       for (const [index, file] of files.entries()) {
         if (uploaded.includes(index)) continue;
@@ -133,11 +141,11 @@ export function ProjectList() {
             <DialogHeader>
               <DialogTitle>New project</DialogTitle>
               <DialogDescription>
-                Give your project a name and add any files for its brief.
+                Add a project name, a text brief, and any reference files.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={submit} className="grid gap-4">
-              <Label className="grid gap-2 font-semibold">
+              <Label className="grid gap-2 font-normal">
                 Title
                 <Input
                   value={name}
@@ -148,7 +156,7 @@ export function ProjectList() {
                   placeholder="Name your project"
                 />
               </Label>
-              <Label className="grid gap-2 font-semibold">
+              <Label className="grid gap-2 font-normal">
                 Description
                 <Textarea
                   value={description}
@@ -156,6 +164,18 @@ export function ProjectList() {
                   maxLength={500}
                   disabled={!!savedProject || busy}
                   placeholder="What is this project about?"
+                />
+              </Label>
+              <Label className="grid gap-2 font-normal">
+                Brief
+                <Textarea
+                  value={briefText}
+                  onChange={(event) => setBriefText(event.target.value)}
+                  required
+                  maxLength={100000}
+                  disabled={!!savedProject || busy}
+                  className="min-h-52 font-normal"
+                  placeholder="Enter the brief for your project."
                 />
               </Label>
               <label
@@ -229,7 +249,7 @@ export function ProjectList() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={busy || !name.trim()}>
+                <Button type="submit" disabled={busy || !name.trim() || !briefText.trim()}>
                   {busy
                     ? "Saving…"
                     : savedProject

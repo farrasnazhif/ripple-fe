@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MediaPreview } from "@/components/workspace/media-review";
 import type { Brief, FinalOutput, GenerationJob, GenerationOperation } from "@/types/ripple";
 
-export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, runGeneration, refresh, initialId }: {
+export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, runGeneration, onGenerationSubmitted, refresh, initialId }: {
   initialId?: string;
   projectId: string;
   token: string;
@@ -18,6 +18,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   busy: boolean;
   run: (fn: () => Promise<void>) => void;
   runGeneration: (operation: GenerationOperation, fn: () => Promise<void>) => void;
+  onGenerationSubmitted: (id: string, status: string) => void;
   refresh: () => Promise<void>;
 }) {
   const [id, setId] = useState(() => initialId || finals.find((final) => final.accepted !== false)?.id);
@@ -47,6 +48,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
     sessionStorage.setItem(storageKey, JSON.stringify(payload));
     try {
       const result = await api.refineFinal(projectId, selected.id, payload, token);
+      onGenerationSubmitted(result.id, result.status || "submitting");
       sessionStorage.removeItem(storageKey);
       setId(result.id);
       setCompare(true);

@@ -16,6 +16,7 @@ import { BriefEditor } from "@/components/workspace/brief-editor";
 import { ProjectBudgetButton, GenerationBudgetDialog } from "@/components/project/project-budget";
 import { FinalReview } from "@/components/workspace/final-review";
 import { MediaReview } from "@/components/workspace/media-review";
+import { GenerationProgressDialog } from "@/components/workspace/generation-progress-dialog";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Project, StoryboardShot, GenerationJob, GenerationOperation } from "@/types/ripple";
+type GenerationProgress = { operation: GenerationOperation; id?: string; resource?: "job" | "final"; status: string; dismissed: boolean };
 type PlanRow = { title: string; prompt: string; requirement_keys: string[] };
 export function Workspace({
   project,
@@ -45,6 +47,7 @@ export function Workspace({
   token: string;
 }) {
   const cache = useQueryClient();
+  const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null);
   const [pendingGeneration, setPendingGeneration] = useState<{ operation: GenerationOperation; fn: () => Promise<void> } | null>(null);
   function runGeneration(operation: GenerationOperation, fn: () => Promise<void>) {
     if (!running.current) setPendingGeneration({ operation, fn });
@@ -100,6 +103,16 @@ export function Workspace({
         ? 10000
         : false,
   });
+  const activeJobs = (jobs.data || []).filter((job) => ["submitting", "unknown", "queued", "in_progress"].includes(job.status))
+    .map((job) => ({ id: job.id, resource: "job" as const, operation: job.kind as GenerationOperation, status: job.status, created_at: job.created_at }));
+  const activeFinals = (review.data?.finals || []).filter((final) => ["submitting", "unknown", "queued", "in_progress"].includes(final.status || ""))
+    .map((final) => ({ id: final.id, resource: "final" as const, operation: final.parent_id ? `${final.kind}_refinement` as GenerationOperation : final.kind as GenerationOperation, status: final.status || "submitting", created_at: final.created_at || "" }));
+  const latestActive = [...activeJobs, ...activeFinals].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const visibleProgress = generationProgress || (latestActive ? { ...latestActive, dismissed: false } : null);
+  const trackedJob = visibleProgress?.resource === "job" ? jobs.data?.find((job) => job.id === visibleProgress.id) : undefined;
+  const trackedFinal = visibleProgress?.resource === "final" ? review.data?.finals.find((final) => final.id === visibleProgress.id) : undefined;
+  const progressStatus = trackedJob?.status || trackedFinal?.status || visibleProgress?.status;
+
   async function refresh() {
     await Promise.all(
       ["brief", "attachments", "storyboard", "generations", "review", "budget"].map(
@@ -188,6 +201,7 @@ export function Workspace({
     }
     sessionStorage.removeItem(storageKey);
     sessionStorage.removeItem(`${storageKey}:prompt`);
+    setGenerationProgress((current) => current ? { ...current, id: job.id, resource: "job", status: job.status } : current);
     setNotice(
       `Generation ${job.status.replaceAll("_", " ")}. Completed media will appear on the canvas.`,
     );
@@ -225,8 +239,16 @@ export function Workspace({
         onSelect={open}
       />
       <div className="absolute top-4 right-4 z-10"><ProjectBudgetButton projectId={project.id} token={token} /></div>
+      {visibleProgress && <GenerationProgressDialog
+        operation={visibleProgress.operation}
+        status={progressStatus || "submitting"}
+        dismissed={visibleProgress.dismissed}
+        onDismiss={() => setGenerationProgress((current) => ({ ...(current || visibleProgress), dismissed: true }))}
+        onReopen={() => setGenerationProgress((current) => ({ ...(current || visibleProgress), dismissed: false }))}
+        onClose={() => setGenerationProgress(progressStatus === "unknown" ? { ...visibleProgress, status: "unknown", dismissed: true } : null)}
+      />}
       {pendingGeneration && <GenerationBudgetDialog projectId={project.id} token={token} operation={pendingGeneration.operation}
-        onClose={() => setPendingGeneration(null)} onConfirm={() => { const fn = pendingGeneration.fn; setPendingGeneration(null); run(fn); }} />}
+        onClose={() => setPendingGeneration(null)} onConfirm={() => { const { fn, operation } = pendingGeneration; setPendingGeneration(null); setGenerationProgress({ operation, status: "submitting", dismissed: false }); run(async () => { try { await fn(); } catch (error) { setGenerationProgress(null); throw error; } }); }} />}
       {error && !selected && (
         <div
           role="alert"
@@ -315,6 +337,7 @@ export function Workspace({
                             try {
                               const result = await api.generateFinalImage(project.id, { request_key: key, expected_version: current.version }, token);
                               setFinalId(result.id);
+                              setGenerationProgress((current) => current ? { ...current, id: result.id, resource: "final", status: result.status || "submitting" } : current);
                               sessionStorage.removeItem(storageKey);
                               setSelected("final");
                             } catch (error) {
@@ -646,7 +669,7 @@ export function Workspace({
             <div className="grid gap-5">
               <FinalReview projectId={project.id} token={token} finals={state.finals} initialId={finalId}
                 brief={current} jobs={jobs.data || []} busy={action.isPending || jobs.isPending || jobs.isError}
-                run={run} runGeneration={runGeneration} refresh={refresh} />
+                run={run} runGeneration={runGeneration} onGenerationSubmitted={(id, status) => setGenerationProgress((current) => current ? { ...current, id, resource: "final", status } : current)} refresh={refresh} />
               <Button variant="outline" onClick={() => open(state.output_type === "image" ? "summary" : "storyboard")}>
                 {state.output_type === "image" ? "Back to brief summary" : "Review storyboard"}
               </Button>
