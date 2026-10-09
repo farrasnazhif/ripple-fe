@@ -9,6 +9,7 @@ import type {
   ProjectReview,
   BriefEdit,
   FinalOutput,
+  ProjectBudget,
 } from "@/types/ripple";
 
 const client = axios.create({
@@ -54,6 +55,8 @@ async function request<T>(
 }
 
 export const api = {
+  budget: (id: string, token: string) => request<ProjectBudget>(`/projects/${id}/budget`, {}, token),
+  setBudget: (id: string, limit_cents: number, token: string) => request<ProjectBudget>(`/projects/${id}/budget`, { method: "PUT", data: { limit_cents } }, token),
   updateProject: (
     id: string,
     name: string,

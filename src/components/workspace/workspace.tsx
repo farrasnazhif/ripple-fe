@@ -13,6 +13,7 @@ import {
 import { GraphCanvas } from "@/components/workspace/graph-canvas";
 import { BriefDetailDialog } from "@/components/brief/brief-detail-dialog";
 import { BriefEditor } from "@/components/workspace/brief-editor";
+import { ProjectBudgetButton, GenerationBudgetDialog } from "@/components/project/project-budget";
 import { FinalReview } from "@/components/workspace/final-review";
 import { MediaReview } from "@/components/workspace/media-review";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
@@ -34,7 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Project, StoryboardShot, GenerationJob } from "@/types/ripple";
+import type { Project, StoryboardShot, GenerationJob, GenerationOperation } from "@/types/ripple";
 type PlanRow = { title: string; prompt: string; requirement_keys: string[] };
 export function Workspace({
   project,
@@ -44,6 +45,10 @@ export function Workspace({
   token: string;
 }) {
   const cache = useQueryClient();
+  const [pendingGeneration, setPendingGeneration] = useState<{ operation: GenerationOperation; fn: () => Promise<void> } | null>(null);
+  function runGeneration(operation: GenerationOperation, fn: () => Promise<void>) {
+    if (!running.current) setPendingGeneration({ operation, fn });
+  }
   const [selected, setSelected] = useState<string | null>(null);
   const [finalId, setFinalId] = useState<string | undefined>();
   const [planning, setPlanning] = useState(false);
@@ -97,7 +102,7 @@ export function Workspace({
   });
   async function refresh() {
     await Promise.all(
-      ["brief", "attachments", "storyboard", "generations", "review"].map(
+      ["brief", "attachments", "storyboard", "generations", "review", "budget"].map(
         (key) => cache.invalidateQueries({ queryKey: [key, token] }),
       ),
     );
@@ -169,14 +174,18 @@ export function Workspace({
     }
     const savedPrompt =
       sessionStorage.getItem(`${storageKey}:prompt`) || prompt;
-    const job = await api.generate(
-      project.id,
-      shot,
-      output,
-      requestKey,
-      token,
-      savedPrompt,
-    );
+    let job: GenerationJob;
+    try {
+      job = await api.generate(project.id, shot, output, requestKey, token, savedPrompt);
+    } catch (error) {
+      if (error instanceof ApiError && [400, 402, 404, 409, 503].includes(error.status)) {
+        sessionStorage.removeItem(storageKey);
+        sessionStorage.removeItem(`${storageKey}:prompt`);
+      }
+      throw error;
+    } finally {
+      await cache.invalidateQueries({ queryKey: ["budget", token, project.id] });
+    }
     sessionStorage.removeItem(storageKey);
     sessionStorage.removeItem(`${storageKey}:prompt`);
     setNotice(
@@ -203,7 +212,7 @@ export function Workspace({
     review.error ||
     jobs.error;
   return (
-    <div className="flex h-[calc(100dvh-58px)] min-h-0 flex-col overflow-hidden">
+    <div className="relative flex h-[calc(100dvh-58px)] min-h-0 flex-col overflow-hidden">
       <GraphCanvas
         projectName={project.name}
         description={project.description}
@@ -215,6 +224,9 @@ export function Workspace({
         review={state}
         onSelect={open}
       />
+      <div className="absolute top-4 right-4 z-10"><ProjectBudgetButton projectId={project.id} token={token} /></div>
+      {pendingGeneration && <GenerationBudgetDialog projectId={project.id} token={token} operation={pendingGeneration.operation}
+        onClose={() => setPendingGeneration(null)} onConfirm={() => { const fn = pendingGeneration.fn; setPendingGeneration(null); run(fn); }} />}
       {error && !selected && (
         <div
           role="alert"
@@ -295,7 +307,7 @@ export function Workspace({
                       <div className="flex flex-wrap gap-3">
                         <Button variant="generation"
                           disabled={action.isPending || review.isError || state.finals.some((final) => ["submitting", "unknown", "queued", "in_progress"].includes(final.status || ""))}
-                          onClick={() => run(async () => {
+                          onClick={() => runGeneration("image", async () => {
                             if (state.output_type !== "image") await api.outputType(project.id, "image", token);
                             const storageKey = `ripple:direct-image:${project.id}:${current.version}`;
                             const key = sessionStorage.getItem(storageKey) || crypto.randomUUID();
@@ -306,7 +318,7 @@ export function Workspace({
                               sessionStorage.removeItem(storageKey);
                               setSelected("final");
                             } catch (error) {
-                              if (error instanceof ApiError && [400, 404, 409, 503].includes(error.status)) sessionStorage.removeItem(storageKey);
+                              if (error instanceof ApiError && [400, 402, 404, 409, 503].includes(error.status)) sessionStorage.removeItem(storageKey);
                               throw error;
                             } finally { await refresh(); }
                           })}>
@@ -539,7 +551,7 @@ export function Workspace({
                         variant="generation"
                         disabled={blocked(shot.id, output)}
                         onClick={() =>
-                          run(() =>
+                          runGeneration(output as "image" | "video", () =>
                             generate(
                               shot.id,
                               output as "image" | "video",
@@ -621,7 +633,7 @@ export function Workspace({
               busy={action.isPending}
               blocked={blocked(selectedShot.id, selectedKind!)}
               onGenerate={(prompt, reason) =>
-                run(() =>
+                runGeneration(selectedKind!,() =>
                   generate(selectedShot.id, selectedKind!, prompt, reason),
                 )
               }
@@ -634,7 +646,7 @@ export function Workspace({
             <div className="grid gap-5">
               <FinalReview projectId={project.id} token={token} finals={state.finals} initialId={finalId}
                 brief={current} jobs={jobs.data || []} busy={action.isPending || jobs.isPending || jobs.isError}
-                run={run} refresh={refresh} />
+                run={run} runGeneration={runGeneration} refresh={refresh} />
               <Button variant="outline" onClick={() => open(state.output_type === "image" ? "summary" : "storyboard")}>
                 {state.output_type === "image" ? "Back to brief summary" : "Review storyboard"}
               </Button>

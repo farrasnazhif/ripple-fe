@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaPreview } from "@/components/workspace/media-review";
-import type { Brief, FinalOutput, GenerationJob } from "@/types/ripple";
+import type { Brief, FinalOutput, GenerationJob, GenerationOperation } from "@/types/ripple";
 
-export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, refresh, initialId }: {
+export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, runGeneration, refresh, initialId }: {
   initialId?: string;
   projectId: string;
   token: string;
@@ -17,6 +17,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   jobs: GenerationJob[];
   busy: boolean;
   run: (fn: () => Promise<void>) => void;
+  runGeneration: (operation: GenerationOperation, fn: () => Promise<void>) => void;
   refresh: () => Promise<void>;
 }) {
   const [id, setId] = useState(() => initialId || finals.find((final) => final.accepted !== false)?.id);
@@ -51,7 +52,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
       setCompare(true);
       setAdjusting(false);
     } catch (error) {
-      if (error instanceof ApiError && [400, 404, 409, 503].includes(error.status)) sessionStorage.removeItem(storageKey);
+      if (error instanceof ApiError && [400, 402, 404, 409, 503].includes(error.status)) sessionStorage.removeItem(storageKey);
       throw error;
     } finally {
       await refresh();
@@ -76,7 +77,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
             <Textarea value={reason} maxLength={2000} disabled={busy} onChange={(event) => setReason(event.target.value)} placeholder="Explain why this final output needs an adjustment." />
           </label>
           <p className="text-xs text-neutral-500">{video ? "The selected final video" : "The selected image"} is sent as the reference. {video ? "This edits the combined video." : "Other images in this collection stay unchanged."}</p>
-          <Button variant="generation" disabled={busy || !!active || stale || !prompt.trim() || !reason.trim()} onClick={() => run(refine)}><Sparkles />{busy ? "Submitting…" : "Generate refined final"}</Button>
+          <Button variant="generation" disabled={busy || !!active || stale || !prompt.trim() || !reason.trim()} onClick={() => runGeneration(video ? "video_refinement" : "image_refinement", refine)}><Sparkles />{busy ? "Submitting…" : "Generate refined final"}</Button>
         </div>}
         <Button disabled={busy || stale || !completed || !url || selected.accepted !== false} onClick={() => run(async () => { await api.acceptFinal(projectId, selected.id, token); await refresh(); })}><Check />{selected.accepted !== false ? "Accepted" : "Mark as accepted"}</Button>
         <p className="text-xs text-neutral-500">Accepting updates the Final Output node. Previous versions and the original image/clip nodes remain in history.</p>

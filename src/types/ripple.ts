@@ -124,3 +124,22 @@ export type BriefEdit = {
   remove_attachments: string[];
   note: string;
 };
+
+export type GenerationOperation = "image" | "video" | "image_refinement" | "video_refinement";
+export type ProjectBudget = {
+  limit_cents: number | null;
+  reserved_cents: number;
+  spent_cents: number;
+  available_cents: number;
+  rates: Record<GenerationOperation, number>;
+  usage: {
+    operation_id: string;
+    operation: GenerationOperation;
+    description: string;
+    actor: string;
+    estimate_cents: number;
+    state: "reserved" | "spent" | "released";
+    status: string;
+    created_at: string;
+  }[];
+};

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:graph": "node --experimental-strip-types --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/check-graph-layout.mjs",
-    "check:assets": "node --experimental-strip-types --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/check-brief-assets.mjs"
+    "check:assets": "node --experimental-strip-types --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/check-brief-assets.mjs",
+    "check:budget": "node --experimental-strip-types --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/check-budget.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -19,6 +19,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
+import { ProjectBudgetButton } from "@/components/project/project-budget";
 import { ProjectEditDialog } from "@/components/project/project-edit-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -305,6 +306,7 @@ export function ProjectList() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
+                        <ProjectBudgetButton projectId={project.id} token={token!} />
                         <Button
                           size="sm"
                           variant="outline"
