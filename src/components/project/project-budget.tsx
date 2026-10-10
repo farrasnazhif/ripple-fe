@@ -28,7 +28,7 @@ function BudgetForm({ budget, projectId, token }: { budget: ProjectBudget; proje
   const save = useMutation({ mutationFn: () => api.setBudget(projectId, cents!, token), onSuccess: (updated) => { cache.setQueryData(["budget", token, projectId], updated); } });
   function submit(event: FormEvent) { event.preventDefault(); if (cents !== null && !save.isPending) save.mutate(); }
   return <form onSubmit={submit} className="grid gap-2">
-    <Label htmlFor={`budget-${projectId}`}>Project media budget (USD)</Label>
+    <Label htmlFor={`budget-${projectId}`}>Project media budget (USD) <span aria-hidden="true" className="text-destructive">*</span></Label>
     <div className="flex gap-2"><Input id={`budget-${projectId}`} inputMode="decimal" value={value} disabled={save.isPending} onChange={(event) => setValue(event.target.value)} placeholder="100.00" required /><Button type="submit" disabled={save.isPending || cents === null || cents < budget.reserved_cents + budget.spent_cents}>{save.isPending ? "Saving…" : "Save budget"}</Button></div>
     <p className="text-xs text-muted-foreground">Up to $1,000,000. Cannot be reduced below spending and reservations. A zero budget blocks new media requests.</p>
     {save.error && <p role="alert" className="text-sm text-destructive">{save.error.message}</p>}

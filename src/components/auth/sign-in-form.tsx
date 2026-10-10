@@ -67,7 +67,7 @@ export function SignInForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           <form onSubmit={submit} className="mt-10 flex flex-col gap-4">
             {mode === "sign-up" && (
               <Label className="flex flex-col items-stretch gap-2.5 text-sm font-medium text-[#4d6960]">
-                Username
+                <span>Username <span aria-hidden="true" className="text-destructive">*</span></span>
                 <Input
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
@@ -80,7 +80,7 @@ export function SignInForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               </Label>
             )}
             <Label className="flex flex-col items-stretch gap-2.5 text-sm font-medium text-[#4d6960]">
-              Email address
+              <span>Email address <span aria-hidden="true" className="text-destructive">*</span></span>
               <Input
                 type="email"
                 value={email}
@@ -92,7 +92,7 @@ export function SignInForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               />
             </Label>
             <Label className="flex flex-col items-stretch gap-2.5 text-sm font-medium text-[#4d6960]">
-              Password
+              <span>Password <span aria-hidden="true" className="text-destructive">*</span></span>
               <Input
                 type="password"
                 value={password}

@@ -146,7 +146,7 @@ export function ProjectList() {
             </DialogHeader>
             <form onSubmit={submit} className="grid gap-4">
               <Label className="grid gap-2 font-normal">
-                Title
+                <span>Title <span aria-hidden="true" className="text-destructive">*</span></span>
                 <Input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
@@ -167,7 +167,7 @@ export function ProjectList() {
                 />
               </Label>
               <Label className="grid gap-2 font-normal">
-                Brief
+                <span>Brief <span aria-hidden="true" className="text-destructive">*</span></span>
                 <Textarea
                   value={briefText}
                   onChange={(event) => setBriefText(event.target.value)}

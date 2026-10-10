@@ -271,7 +271,7 @@ export function Workspace({
         }}
       >
         <DialogContent
-          className={`max-h-[90vh] rounded-md sm:max-w-4xl ${styledNodeHeader ? "flex flex-col overflow-hidden border border-neutral-200/80 p-0 shadow-2xl" : "overflow-y-auto p-6"} ${selectedShot || selected === "final" ? "lg:max-w-6xl" : ""}`}
+          className={`max-h-[90vh] rounded-md sm:max-w-4xl ${styledNodeHeader ? "flex flex-col overflow-hidden border border-neutral-200/80 p-0 shadow-2xl" : selectedShot || selected === "final" ? "flex h-[90vh] flex-col overflow-hidden p-6" : "overflow-y-auto p-6"} ${selectedShot || selected === "final" ? "lg:max-w-6xl" : ""}`}
         >
           {styledNodeHeader ? (
             <div className="shrink-0 px-6 pt-6 pb-0">
@@ -300,7 +300,7 @@ export function Workspace({
 
             </DialogHeader>
           )}
-          <div className={styledNodeHeader ? "min-h-0 flex-1 overflow-y-auto p-6" : "contents"}>
+          <div className={styledNodeHeader ? "min-h-0 flex-1 overflow-y-auto p-6" : selectedShot || selected === "final" ? "flex min-h-0 flex-1 flex-col gap-4" : "contents"}>
           {(!current || !state) && <p>Loading project…</p>}
           {current &&
             state &&
@@ -412,8 +412,9 @@ export function Workspace({
                     {kind === "image" ? "Image" : "Shot"} {i + 1}
                   </legend>
                   <label className="grid gap-1 text-sm">
-                    Title
+                    <span>Title <span aria-hidden="true" className="text-destructive">*</span></span>
                     <Input
+                      required
                       value={row.title}
                       maxLength={200}
                       onChange={(e) =>
@@ -426,8 +427,9 @@ export function Workspace({
                     />
                   </label>
                   <label className="grid gap-1 text-sm">
-                    Generation prompt
+                    <span>Generation prompt <span aria-hidden="true" className="text-destructive">*</span></span>
                     <Textarea
+                      required
                       value={row.prompt}
                       maxLength={10000}
                       onChange={(e) =>
@@ -671,11 +673,11 @@ export function Workspace({
             />
           )}
           {selected === "final" && state && current && (
-            <div className="grid gap-5">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
               <FinalReview projectId={project.id} token={token} finals={state.finals} initialId={finalId}
                 brief={current} jobs={jobs.data || []} busy={action.isPending || jobs.isPending || jobs.isError}
                 run={run} runGeneration={runGeneration} onGenerationSubmitted={(id, status) => setGenerationProgress((current) => current ? { ...current, id, resource: "final", status } : current)} refresh={refresh} />
-              <Button variant="outline" onClick={() => open(state.output_type === "image" ? "summary" : "storyboard")}>
+              <Button className="self-start" variant="outline" onClick={() => open(state.output_type === "image" ? "summary" : "storyboard")}>
                 {state.output_type === "image" ? "Back to brief summary" : "Review storyboard"}
               </Button>
             </div>

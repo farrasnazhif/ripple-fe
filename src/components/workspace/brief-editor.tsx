@@ -338,12 +338,14 @@ export function BriefEditor({
                   className="flex flex-col gap-2 sm:flex-row sm:items-center"
                 >
                   {/* Category Name */}
-                  <div className="sm:w-1/3">
+                  <label className="grid gap-1 sm:w-1/3">
+                    <span className="text-xs text-neutral-500">Key <span aria-hidden="true" className="text-destructive">*</span></span>
                     <Input
                       aria-label={`Requirement ${i + 1} key`}
                       value={point.key}
                       maxLength={80}
                       placeholder="Category (e.g. Lighting)"
+                      required
                       className="h-8 text-xs md:text-xs"
                       onChange={(e) =>
                         setPoints((v) =>
@@ -353,15 +355,17 @@ export function BriefEditor({
                         )
                       }
                     />
-                  </div>
+                  </label>
 
                   {/* Guideline Description */}
-                  <div className="flex-1">
+                  <label className="grid flex-1 gap-1">
+                    <span className="text-xs text-neutral-500">Requirement <span aria-hidden="true" className="text-destructive">*</span></span>
                     <Input
                       aria-label={`Requirement ${i + 1} value`}
                       value={point.value}
                       maxLength={2000}
                       placeholder="Guideline (e.g. Warm sunlight through blinds)"
+                      required
                       className="h-8 text-xs md:text-xs"
                       onChange={(e) =>
                         setPoints((v) =>
@@ -371,10 +375,10 @@ export function BriefEditor({
                         )
                       }
                     />
-                  </div>
+                  </label>
 
                   {/* Scope Selector & Actions */}
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2 sm:self-end">
                     <Select
                       items={[
                         { value: "local", label: "Local" },
@@ -516,9 +520,10 @@ export function BriefEditor({
             <div className="flex flex-col gap-4 rounded-md bg-emerald-50/40 p-5">
               <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-900">
-                  Refinement Instructions
+                  <span>Refinement Instructions <span aria-hidden="true" className="text-destructive">*</span></span>
                 </label>
                 <Textarea
+                  required
                   value={instructions}
                   maxLength={2000}
                   className="min-h-24 rounded-md bg-white p-3 text-xs shadow-2xs"

@@ -91,8 +91,8 @@ export function MediaReview({
   const requiresReview = impacts.length > 0 && !resolved;
   const snapshot = review.versions.find((v) => v.version === job.brief_version);
   return (
-    <div className="grid gap-6 md:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.2fr)]">
-      <div className="grid content-start gap-5 md:max-h-[70vh] md:overflow-y-auto md:pr-3">
+    <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-6 md:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.2fr)] md:grid-rows-1">
+      <div className="grid min-h-0 content-start gap-5 overflow-y-auto pr-3">
         <div>
           <p className="text-xs text-neutral-500">
             {shot.title} · Brief v{job.brief_version} · Version{" "}
@@ -146,13 +146,38 @@ export function MediaReview({
             </p>
           )}
         </section>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="generation"
+            disabled={busy || blocked}
+            onClick={() => onGenerate(job.prompt)}
+          >
+            Regenerate
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy || blocked}
+            onClick={() => {
+              setAdjusting(!adjusting);
+              setPrompt(job.prompt);
+            }}
+          >
+            Adjust / Refine
+          </Button>
+          <Button
+            disabled={busy || requiresReview || job.accepted}
+            onClick={() => onDecision(job, "accept", "")}
+          >
+            {job.accepted ? "Accepted" : "Mark as accepted"}
+          </Button>
+        </div>
         <label className="grid gap-2 text-sm">
           Decision or refinement reason
           <Textarea
             value={reason}
             maxLength={2000}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Explain why you refine or keep this output"
+            placeholder="Optional for refinement; required when keeping a version with a reason"
           />
         </label>
         <Button
@@ -165,8 +190,14 @@ export function MediaReview({
         {adjusting && (
           <div className="grid gap-3">
             <label className="grid gap-2 text-sm">
-              Refined generation prompt
+              <span>
+                Refined generation prompt{" "}
+                <span aria-hidden="true" className="text-destructive">
+                  *
+                </span>
+              </span>
               <Textarea
+                required
                 value={prompt}
                 maxLength={10000}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -175,13 +206,21 @@ export function MediaReview({
             </label>
             <Button
               variant="generation"
-              disabled={busy || blocked || !prompt.trim() || !reason.trim()}
+              disabled={busy || blocked || !prompt.trim()}
               onClick={() => onGenerate(prompt, reason)}
             >
               Generate refined version
             </Button>
           </div>
         )}
+        <a
+          className="text-sm underline"
+          href={job.outputs[0]}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open original output
+        </a>
         <Accordion multiple>
           <AccordionItem value="generation-prompt">
             <AccordionTrigger>Generation prompt</AccordionTrigger>
@@ -209,36 +248,13 @@ export function MediaReview({
           </AccordionItem>
         </Accordion>
       </div>
-      <div className="grid min-w-0 content-start gap-4 md:border-l md:pl-6">
-        <div className="overflow-hidden rounded-md border bg-neutral-100">
-          <MediaPreview url={job.outputs[0]} video={job.kind === "video"} />
-          <div className="flex flex-wrap gap-2 border-t bg-white p-3">
-            <Button
-              variant="generation"
-              disabled={busy || blocked}
-              onClick={() => onGenerate(job.prompt)}
-            >
-              Generate again
-            </Button>
-            <Button
-              variant="outline"
-              disabled={busy || blocked}
-              onClick={() => {
-                setAdjusting(!adjusting);
-                setPrompt(job.prompt);
-              }}
-            >
-              Adjust / Refine
-            </Button>
-            <Button
-              disabled={busy || requiresReview || job.accepted}
-              onClick={() => onDecision(job, "accept", "")}
-            >
-              {job.accepted ? "Accepted" : "Mark as accepted"}
-            </Button>
+      <div className="flex min-h-0 min-w-0 flex-col gap-4 md:border-l md:pl-6">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-md border bg-neutral-100 md:flex-1">
+          <div className="h-[24vh] min-h-0 md:h-auto md:flex-1">
+            <MediaPreview url={job.outputs[0]} video={job.kind === "video"} />
           </div>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex shrink-0 gap-3 overflow-x-auto pb-2">
           {versions.map((v, i) => (
             <button
               key={v.id}
@@ -265,17 +281,8 @@ export function MediaReview({
           ))}
         </div>
         <p className="text-xs text-neutral-500">
-          New generations use Higgsfield. Existing versions remain in your
-          history.
+          Existing versions remain in your history.
         </p>
-        <a
-          className="text-sm underline"
-          href={job.outputs[0]}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Open original output
-        </a>
       </div>
     </div>
   );

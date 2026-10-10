@@ -57,7 +57,7 @@ export function ProjectEditDialog({
         </DialogHeader>
         <form onSubmit={submit} className="grid gap-4">
           <Label className="grid gap-2">
-            Title
+            <span>Title <span aria-hidden="true" className="text-destructive">*</span></span>
             <Input
               required
               maxLength={100}
