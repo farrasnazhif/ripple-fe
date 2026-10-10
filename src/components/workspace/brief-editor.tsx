@@ -458,11 +458,11 @@ export function BriefEditor({
                   </div>
                 </div>
 
-                <div className="flex w-full max-w-[440px] flex-row items-end gap-2">
+                <div className="ml-auto flex w-fit max-w-full flex-row items-end gap-2">
                   <GenerationModelSelect kind="text" disabled={busy} />
                   <Button
                     variant="generation"
-                  className="h-auto min-h-8 min-w-0 flex-[2] py-1 whitespace-normal"
+                    className="h-auto min-h-8 w-fit flex-none py-1 whitespace-nowrap"
                     disabled={
                       busy ||
                       files.some((_, i) => !uploaded.includes(i)) ||
@@ -494,7 +494,7 @@ export function BriefEditor({
                       })
                     }
                   >
-                    Generate summary with ChatGPT
+                    Summarize With AI
                   </Button>
                 </div>
               </div>

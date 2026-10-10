@@ -378,11 +378,11 @@ export function Workspace({
                 Review prompts and link local requirements before saving. Global
                 requirements automatically apply to all shots.
               </p>
-              <div className="flex w-full max-w-[440px] flex-row items-end gap-2">
+              <div className="flex w-fit max-w-full flex-row items-end justify-start gap-2">
                 <GenerationModelSelect kind="text" disabled={action.isPending} />
                 <Button
                   variant="generation"
-                className="h-auto min-h-8 min-w-0 flex-[2] py-1 whitespace-normal"
+                  className="h-auto min-h-8 w-fit flex-none py-1 whitespace-nowrap"
                   disabled={action.isPending}
                   onClick={() =>
                     run(async () => {
@@ -403,7 +403,7 @@ export function Workspace({
                     })
                   }
                 >
-                  Draft {planTitle.toLowerCase()} with ChatGPT
+                  Draft Storyboard With AI
                 </Button>
               </div>
               {rows.map((row, i) => (
@@ -747,6 +747,7 @@ function ShotRequirements({
       points.some((point) => point.key === key),
     ),
   );
+  if (!points.some((point) => point.scope === "local")) return null;
   return (
     <Accordion>
       <AccordionItem value="requirement-links">

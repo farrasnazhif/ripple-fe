@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Check, FileText, Video } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { outputHistory } from "@/lib/output-versions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -28,7 +29,9 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   const [compare, setCompare] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [reason, setReason] = useState("");
-  const selected = finals.find((final) => final.id === id) || finals[0];
+  const kind = (finals.find(final => final.id === id) || finals[0])?.kind;
+  const versions = outputHistory(finals.filter(final => final.kind === kind));
+  const selected = versions.find((final) => final.id === id) || versions[0];
   if (!selected) return <p>No saved final output yet.</p>;
   const video = selected.kind === "video";
   const source = finals.find((final) => final.id === selected.parent_id);
@@ -37,7 +40,6 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   const active = finals.find((final) => ["submitting", "unknown", "queued", "in_progress"].includes(final.status || ""));
   const stale = selected.brief_version !== brief.version || selected.job_ids.some((jobId) => !jobs.some((job) => job.id === jobId && job.accepted));
   const completed = !selected.status || selected.status === "completed";
-  const versions = [...finals].reverse();
   async function submitRevision(regenerate = false) {
     const storageKey = `ripple:final-${regenerate ? "regeneration" : "refinement"}:${projectId}:${selected.id}:${imageIndex}`;
     const saved = sessionStorage.getItem(storageKey);
@@ -66,8 +68,8 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   return (
     <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-6 md:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.2fr)] md:grid-rows-1">
       <div className="grid min-h-0 content-start gap-4 overflow-y-auto pr-3">
-        <h3 className="font-semibold">{video ? "Final Video" : selected.outputs.length > 1 ? "Final Images" : "Final Image"} · Version {versions.findIndex((final) => final.id === selected.id) + 1}</h3>
-        <p className="text-sm text-neutral-500">Brief v{selected.brief_version} · {selected.accepted !== false ? "Accepted" : completed ? "Pending approval" : selected.status}</p>
+        <h3 className="font-semibold">{video ? "Final Video" : selected.outputs.length > 1 ? "Final Images" : "Final Image"} · {versions[0].id === selected.id ? "Current" : "Version 1"}</h3>
+        <p className="text-sm text-neutral-500">{selected.brief_version === brief.version ? "Current brief" : "Earlier brief"} · {selected.accepted !== false ? "Accepted" : completed ? "Pending approval" : selected.status}</p>
         {stale && <p className="text-sm text-amber-700">{video || selected.job_ids.length ? "The brief or accepted source outputs have changed. Review the affected shots and rebuild the final before refining or accepting this version." : "The brief summary has changed. Generate a new final image from the updated summary before refining or accepting this version."}</p>}
         {selected.prompt && <Accordion key={selected.id}>
           <AccordionItem value="prompt">
@@ -123,11 +125,11 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
         <div className="flex shrink-0 gap-3 overflow-x-auto pb-2" aria-label="Final output version history">
           {versions.map((final, index) => {
             const preview = final.download_url || final.outputs[final.image_index || 0];
-            return <button key={final.id} type="button" aria-label={`View final version ${index + 1}${final.accepted !== false ? ", accepted" : ""}`} aria-pressed={selected.id === final.id} disabled={busy}
+            return <button key={final.id} type="button" aria-label={`View final ${index === 0 ? "Current" : "Version 1"}${final.accepted !== false ? ", accepted" : ""}`} aria-pressed={selected.id === final.id} disabled={busy}
               onClick={() => { setId(final.id); setImageIndex(final.image_index || 0); setAdjusting(false); setCompare(false); }}
               className={`relative h-24 w-28 shrink-0 overflow-hidden rounded-md border-2 bg-neutral-100 ${selected.id === final.id ? "border-emerald-500" : "border-neutral-200"}`}>
               {preview ? <MediaPreview url={preview} video={final.kind === "video"} thumbnail /> : <span className="flex h-full items-center justify-center">{final.kind === "video" ? <Video /> : <FileText />}</span>}
-              <span className="absolute top-1 right-1 rounded-md bg-white px-1.5 text-xs">{index + 1}{final.accepted !== false && <Check className="inline size-3" />}</span>
+              <span className="absolute top-1 right-1 rounded-md bg-white px-1.5 text-xs">{index === 0 ? "Current" : "Version 1"}{final.accepted !== false && <Check className="inline size-3" />}</span>
             </button>;
           })}
         </div>

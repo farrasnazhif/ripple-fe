@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { outputHistory } from "@/lib/output-versions";
 import { Check, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,10 +69,9 @@ export function MediaReview({
     reason: string,
   ) => void;
 }) {
-  const [id, setId] = useState(
-    (versions.find((j) => j.accepted) || versions.at(-1))?.id,
-  );
-  const job = versions.find((j) => j.id === id) || versions.at(-1)!;
+  const visibleVersions = outputHistory(versions);
+  const [id, setId] = useState(visibleVersions[0]?.id);
+  const job = visibleVersions.find((j) => j.id === id) || visibleVersions[0];
   const [adjusting, setAdjusting] = useState(false);
   const [prompt, setPrompt] = useState(job.prompt);
   const [reason, setReason] = useState("");
@@ -95,8 +95,7 @@ export function MediaReview({
       <div className="grid min-h-0 content-start gap-5 overflow-y-auto pr-3">
         <div>
           <p className="text-xs text-neutral-500">
-            {shot.title} · Brief v{job.brief_version} · Version{" "}
-            {versions.findIndex((j) => j.id === job.id) + 1}
+            {shot.title} · {visibleVersions[0].id === job.id ? "Current" : "Version 1"}
           </p>
           <h3 className="mt-4 text-sm text-neutral-500">
             Summary at generation
@@ -255,11 +254,11 @@ export function MediaReview({
           </div>
         </div>
         <div className="flex shrink-0 gap-3 overflow-x-auto pb-2">
-          {versions.map((v, i) => (
+          {visibleVersions.map((v, i) => (
             <button
               key={v.id}
               type="button"
-              aria-label={`View version ${i + 1}${v.accepted ? ", accepted" : ""}`}
+              aria-label={`View ${i === 0 ? "Current" : "Version 1"}${v.accepted ? ", accepted" : ""}`}
               aria-pressed={job.id === v.id}
               onClick={() => {
                 setId(v.id);
@@ -274,7 +273,7 @@ export function MediaReview({
                 thumbnail
               />
               <span className="absolute top-1 right-1 rounded-md bg-white px-1.5 text-xs">
-                {i + 1}
+                {i === 0 ? "Current" : "Version 1"}
                 {v.accepted && <Check className="inline size-3" />}
               </span>
             </button>

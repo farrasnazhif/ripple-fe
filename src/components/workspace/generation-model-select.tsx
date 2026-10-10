@@ -51,7 +51,7 @@ export function GenerationModelSelect({ kind, disabled = false }: {
   const id = useId();
   const options = models[kind];
   return (
-    <div className="grid min-w-0 flex-1 gap-1.5">
+    <div className="grid w-32 min-w-0 shrink-0 gap-1.5">
       <Label htmlFor={id} className="text-xs font-normal">AI model</Label>
       <Select items={options} value={options[0].value} disabled={disabled}>
         <SelectTrigger id={id} size="sm" className="w-full min-w-0 text-xs">
