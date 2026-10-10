@@ -6,9 +6,9 @@ assert.deepEqual(briefHistory(versions, 4).map(v => [v.version, v.archiveNumber]
 assert.deepEqual(briefHistory([versions[0]], 1), []);
 assert.deepEqual(briefHistory([], 1), []);
 const next = { ...base, version: 5, raw_text: "Newest" };
-assert.deepEqual(briefHistory([...versions, next], 5).map(v => [v.version, v.archiveNumber]), [[3, 1]]);
+assert.deepEqual(briefHistory([...versions, next], 5).map(v => [v.version, v.archiveNumber]), [[3, 2], [1, 1]]);
 assert.deepEqual(briefHistory([{ ...base, version: 1 }, { ...base, version: 2, attachments: ["two", "one"] }], 2), []);
 assert.equal(briefHistory([{ ...base, version: 1 }, { ...base, version: 2, points: [{ ...base.points[0], scope: "global" }] }], 2).length, 1);
 assert.equal(briefHistory([{ ...base, version: 1 }, { ...base, version: 2, attachments: ["one"] }], 2).length, 1);
-assert.deepEqual(briefHistory([...versions, next, { ...base, version: 6 }], 6).map(v => [v.version, v.archiveNumber]), [[5, 1]]);
-console.log("Current plus one previous distinct version, duplicate saves, requirement and attachment changes passed.");
+assert.deepEqual(briefHistory([...versions, next, { ...base, version: 6 }], 6).map(v => [v.version, v.archiveNumber]), [[5, 3], [3, 2], [1, 1]]);
+console.log("Current plus incrementing previous distinct versions, duplicate saves, requirement and attachment changes passed.");

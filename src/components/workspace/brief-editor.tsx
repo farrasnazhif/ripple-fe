@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Trash2, Upload, History, Info, Clock } from "lucide-react";
 import { api } from "@/lib/api";
+import { downloadFile } from "@/lib/download-file";
 import { briefHistory } from "@/lib/brief-versions";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
@@ -193,6 +194,7 @@ export function BriefEditor({
                 <Button
                   key={id}
                   variant="outline"
+                  disabled={busy}
                   onClick={() =>
                     run(async () => {
                       const file = await api.downloadAttachment(
@@ -200,15 +202,14 @@ export function BriefEditor({
                         id,
                         token,
                       );
-                      window.open(
+                      await downloadFile(
                         file.download_url,
-                        "_blank",
-                        "noopener,noreferrer",
+                        attachments.find(attachment => attachment.id === id)?.file_name || `ripple-archived-${id}`,
                       );
                     })
                   }
                 >
-                  Open archived attachment
+                  Download archived attachment
                 </Button>
               ))}
             </div>

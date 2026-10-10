@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { outputHistory } from "@/lib/output-versions";
+import { DownloadOutputButton } from "@/components/workspace/download-output-button";
 import { Check, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,7 +96,7 @@ export function MediaReview({
       <div className="grid min-h-0 content-start gap-5 overflow-y-auto pr-3">
         <div>
           <p className="text-xs text-neutral-500">
-            {shot.title} · {visibleVersions[0].id === job.id ? "Current" : "Version 1"}
+            {shot.title} · {visibleVersions[0].id === job.id ? "Current" : `Version ${visibleVersions.length - visibleVersions.findIndex(version => version.id === job.id)}`}
           </p>
           <h3 className="mt-4 text-sm text-neutral-500">
             Summary at generation
@@ -212,14 +213,7 @@ export function MediaReview({
             </Button>
           </div>
         )}
-        <a
-          className="text-sm underline"
-          href={job.outputs[0]}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Open original output
-        </a>
+        <DownloadOutputButton url={job.outputs[0]} filename={`ripple-${job.kind}-${job.id}`} video={job.kind === "video"} disabled={busy} />
         <Accordion multiple>
           <AccordionItem value="generation-prompt">
             <AccordionTrigger>Generation prompt</AccordionTrigger>
@@ -258,7 +252,7 @@ export function MediaReview({
             <button
               key={v.id}
               type="button"
-              aria-label={`View ${i === 0 ? "Current" : "Version 1"}${v.accepted ? ", accepted" : ""}`}
+              aria-label={`View ${i === 0 ? "Current" : `Version ${visibleVersions.length - i}`}${v.accepted ? ", accepted" : ""}`}
               aria-pressed={job.id === v.id}
               onClick={() => {
                 setId(v.id);
@@ -273,7 +267,7 @@ export function MediaReview({
                 thumbnail
               />
               <span className="absolute top-1 right-1 rounded-md bg-white px-1.5 text-xs">
-                {i === 0 ? "Current" : "Version 1"}
+                {i === 0 ? "Current" : `Version ${visibleVersions.length - i}`}
                 {v.accepted && <Check className="inline size-3" />}
               </span>
             </button>

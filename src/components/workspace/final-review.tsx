@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaPreview } from "@/components/workspace/media-review";
+import { DownloadOutputButton } from "@/components/workspace/download-output-button";
 import type { Brief, FinalOutput, GenerationJob, GenerationOperation } from "@/types/ripple";
 
 export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, runGeneration, onGenerationSubmitted, refresh, initialId }: {
@@ -68,7 +69,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
   return (
     <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-6 md:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.2fr)] md:grid-rows-1">
       <div className="grid min-h-0 content-start gap-4 overflow-y-auto pr-3">
-        <h3 className="font-semibold">{video ? "Final Video" : selected.outputs.length > 1 ? "Final Images" : "Final Image"} · {versions[0].id === selected.id ? "Current" : "Version 1"}</h3>
+        <h3 className="font-semibold">{video ? "Final Video" : selected.outputs.length > 1 ? "Final Images" : "Final Image"} · {versions[0].id === selected.id ? "Current" : `Version ${versions.length - versions.findIndex(version => version.id === selected.id)}`}</h3>
         <p className="text-sm text-neutral-500">{selected.brief_version === brief.version ? "Current brief" : "Earlier brief"} · {selected.accepted !== false ? "Accepted" : completed ? "Pending approval" : selected.status}</p>
         {stale && <p className="text-sm text-amber-700">{video || selected.job_ids.length ? "The brief or accepted source outputs have changed. Review the affected shots and rebuild the final before refining or accepting this version." : "The brief summary has changed. Generate a new final image from the updated summary before refining or accepting this version."}</p>}
         {selected.prompt && <Accordion key={selected.id}>
@@ -92,7 +93,7 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
         <Button disabled={busy || stale || !completed || !url || selected.accepted !== false} onClick={() => run(async () => { await api.acceptFinal(projectId, selected.id, token); await refresh(); })}>{selected.accepted !== false ? "Accepted" : "Mark as accepted"}</Button>
         </div>
         {source && <Button variant="outline" onClick={() => setCompare(!compare)}>{compare ? "Hide source comparison" : "Compare with source"}</Button>}
-        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm underline">Open / download output</a>}
+        {url && <DownloadOutputButton url={url} filename={`ripple-final-${selected.id}-${imageIndex + 1}`} video={video} disabled={busy} />}
         {!selected.prompt?.trim() && <p className="text-xs text-neutral-500">This combined output has no single generation prompt. Regenerate its source clips or use Adjust / Refine.</p>}
         {adjusting && <div className="grid gap-3">
           <label className="grid gap-2 text-sm"><span>What would you like to change? <span aria-hidden="true" className="text-destructive">*</span></span>
@@ -125,11 +126,11 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
         <div className="flex shrink-0 gap-3 overflow-x-auto pb-2" aria-label="Final output version history">
           {versions.map((final, index) => {
             const preview = final.download_url || final.outputs[final.image_index || 0];
-            return <button key={final.id} type="button" aria-label={`View final ${index === 0 ? "Current" : "Version 1"}${final.accepted !== false ? ", accepted" : ""}`} aria-pressed={selected.id === final.id} disabled={busy}
+            return <button key={final.id} type="button" aria-label={`View final ${index === 0 ? "Current" : `Version ${versions.length - index}`}${final.accepted !== false ? ", accepted" : ""}`} aria-pressed={selected.id === final.id} disabled={busy}
               onClick={() => { setId(final.id); setImageIndex(final.image_index || 0); setAdjusting(false); setCompare(false); }}
               className={`relative h-24 w-28 shrink-0 overflow-hidden rounded-md border-2 bg-neutral-100 ${selected.id === final.id ? "border-emerald-500" : "border-neutral-200"}`}>
               {preview ? <MediaPreview url={preview} video={final.kind === "video"} thumbnail /> : <span className="flex h-full items-center justify-center">{final.kind === "video" ? <Video /> : <FileText />}</span>}
-              <span className="absolute top-1 right-1 rounded-md bg-white px-1.5 text-xs">{index === 0 ? "Current" : "Version 1"}{final.accepted !== false && <Check className="inline size-3" />}</span>
+              <span className="absolute top-1 right-1 rounded-md bg-white px-1.5 text-xs">{index === 0 ? "Current" : `Version ${versions.length - index}`}{final.accepted !== false && <Check className="inline size-3" />}</span>
             </button>;
           })}
         </div>

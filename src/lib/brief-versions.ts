@@ -15,5 +15,5 @@ export function briefHistory(versions: BriefVersion[], currentVersion: number) {
   }
   const current = versions.find(version => version.version === currentVersion);
   if (current && states.length && signature(states[states.length - 1]) === signature(current)) states.pop();
-  return states.slice(-1).map(version => ({ ...version, archiveNumber: 1 }));
+  return states.map((version, index) => ({ ...version, archiveNumber: index + 1 })).reverse();
 }
