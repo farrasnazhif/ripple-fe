@@ -58,12 +58,13 @@ export function projectCanvasNodes(
       (!output.status || output.status === "completed") && output.outputs.length);
     const final = completed.find((output) => output.accepted !== false) || completed[0];
     const inputsChanged = final?.job_ids.some((id) => !jobs.some((job) => job.id === id && job.accepted));
+    const stale = !!final && (!!(version && final.brief_version < version) || !!inputsChanged);
     if (final) nodes.push({
       id: "final", parent: "summary",
       title: final.outputs.length > 1 ? "Final Images" : "Final Image",
       summary: final.prompt || summary,
       status: `Brief v${final.brief_version} · ${(version && final.brief_version < version) || inputsChanged ? "Earlier version" : final.accepted === false ? "Pending approval" : "Ready"}`,
-      x: 700, y: 180, kind: "stage", preview: final.outputs[0],
+      x: 700, y: 180, kind: "stage", preview: final.outputs[0], review: stale,
     });
     return nodes;
   }
@@ -103,7 +104,9 @@ export function projectCanvasNodes(
         d.brief_version === version &&
         ["keep", "accept"].includes(d.action),
     );
-    const needsReview = !!impact?.length && !resolved;
+    const shot = shots.find((shot) => shot.id === job.shot_id);
+    const storyboardChanged = !!shot && shot.prompt !== job.prompt && shot.prompt !== versions[0].prompt;
+    const needsReview = (!!impact?.length && !resolved) || storyboardChanged;
     nodes.push({
       id: key,
       parent: "storyboard",
@@ -124,6 +127,13 @@ export function projectCanvasNodes(
   const finalSelectionChanged = final?.job_ids.some(
     (id) => !jobs.some((job) => job.id === id && job.accepted),
   );
+  const finalNeedsReview = !!final && (
+    !!(version && final.brief_version < version) || !!finalSelectionChanged ||
+    final.job_ids.some(id => {
+      const job = jobs.find(job => job.id === id);
+      return !!job && nodes.some(node => node.id === `${job.shot_id}:${job.kind}` && node.review);
+    })
+  );
   if (final) {
     nodes.push({
       id: "final",
@@ -141,6 +151,7 @@ export function projectCanvasNodes(
       kind: "stage",
       preview: final.download_url || final.outputs[0],
       video: final.kind === "video",
+      review: finalNeedsReview,
     });
   }
   return nodes;

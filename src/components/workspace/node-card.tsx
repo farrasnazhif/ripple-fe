@@ -11,7 +11,7 @@ export function NodeCard({ item, className, ...props }:
   return (
     <button
       type="button"
-      className={cn("flex h-[220px] w-[246px] flex-col gap-2 rounded-md border border-neutral-200 bg-white p-3 text-left shadow-sm focus-visible:outline-emerald-500", className)}
+      className={cn("flex h-[220px] w-[246px] flex-col gap-2 rounded-md border border-neutral-200 bg-white p-3 text-left shadow-sm focus-visible:outline-emerald-500", item.review && "ring-2 ring-yellow-400 ring-offset-2", className)}
       {...props}
     >
       <span className="flex min-w-0 shrink-0 items-center gap-2 text-[13px] font-semibold">
@@ -49,7 +49,7 @@ export function NodeCard({ item, className, ...props }:
         className={`flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 py-2 text-[11px] ${item.review || item.kind === "source" ? "bg-yellow-100 text-yellow-900" : "bg-neutral-100 text-neutral-600"}`}
       >
         <History size={14} className="shrink-0" />
-        <span className="truncate" title={item.status}>{item.status}</span>
+        <span className="truncate" title={item.review ? `May be stale · Needs revision. ${item.status}` : item.status}>{item.review ? "May be stale · Needs revision" : item.status}</span>
       </span>
     </button>
   );

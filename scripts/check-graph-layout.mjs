@@ -215,3 +215,28 @@ assert.deepEqual(
   { brief: { x: 40, y: 10 } },
 );
 console.log("Saved node positions round-trip safely; invalid stored coordinates are ignored.");
+
+const staleImageGraph = projectCanvasNodes("", "Brief", 0, "Summary", [], [], {
+  ...review, output_type: "image", versions: [{ version: 3 }], finals: [imageFinal],
+});
+assert.equal(staleImageGraph.at(-1).review, true, "Changed brief must flag the old final image");
+const currentImageGraph = projectCanvasNodes("", "Brief", 0, "Summary", [], [], {
+  ...review, output_type: "image", finals: [imageFinal],
+});
+assert.equal(currentImageGraph.at(-1).review, false, "Current image must not be flagged");
+const changedShots = [{ ...shots[0], prompt: "A forest" }];
+const storyboardChangedGraph = projectCanvasNodes("", "Brief", 0, "Summary", changedShots, [old], {
+  ...review, changes: [], decisions: [], finals: [acceptedFinal],
+});
+assert.equal(storyboardChangedGraph.find(node => node.id === "shot-1:video").review, true);
+assert.equal(storyboardChangedGraph.at(-1).review, true, "A stale source clip must flag its final");
+const adjustedJob = { ...newer, prompt: "A beach with warmer light", accepted: true };
+const intentionalAdjustmentGraph = projectCanvasNodes("", "Brief", 0, "Summary", shots, [{ ...old, accepted: false }, adjustedJob], {
+  ...review, changes: [], decisions: [], finals: [],
+});
+assert.equal(intentionalAdjustmentGraph.at(-1).review, false, "An intentional prompt adjustment is not a storyboard edit");
+const updatedStoryboardGraph = projectCanvasNodes("", "Brief", 0, "Summary", changedShots, [{ ...old, accepted: false }, { ...newer, prompt: "A forest", accepted: true }], {
+  ...review, changes: [], decisions: [], finals: [],
+});
+assert.equal(updatedStoryboardGraph.at(-1).review, false, "Regenerated clip matching the storyboard clears its warning");
+console.log("Stale images, storyboard dependencies, and final outputs are flagged; reviewed and current outputs remain unchanged.");
