@@ -69,7 +69,6 @@ export function FinalReview({ projectId, token, finals, brief, jobs, busy, run, 
         <h3 className="font-semibold">{video ? "Final Video" : selected.outputs.length > 1 ? "Final Images" : "Final Image"} · Version {versions.findIndex((final) => final.id === selected.id) + 1}</h3>
         <p className="text-sm text-neutral-500">Brief v{selected.brief_version} · {selected.accepted !== false ? "Accepted" : completed ? "Pending approval" : selected.status}</p>
         {stale && <p className="text-sm text-amber-700">{video || selected.job_ids.length ? "The brief or accepted source outputs have changed. Review the affected shots and rebuild the final before refining or accepting this version." : "The brief summary has changed. Generate a new final image from the updated summary before refining or accepting this version."}</p>}
-        {brief.summary && <p className="whitespace-pre-wrap text-sm">{brief.summary}</p>}
         {selected.prompt && <Accordion key={selected.id}>
           <AccordionItem value="prompt">
             <AccordionTrigger>{selected.parent_id ? "Saved adjustments" : "Generation prompt"}</AccordionTrigger>
