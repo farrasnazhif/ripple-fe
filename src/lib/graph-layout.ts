@@ -38,7 +38,7 @@ export function projectCanvasNodes(
       title: "Brief",
       summary:
         rawText || description || "Add your source material and references",
-      status: `${fileCount} files${version ? ` · Brief v${version}` : ""}`,
+      status: `${fileCount} files · Current`,
       ...nodePosition("brief"),
       kind: "source",
     },

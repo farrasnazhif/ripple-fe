@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Trash2, Upload, History, Info, Clock } from "lucide-react";
 import { api } from "@/lib/api";
+import { briefHistory } from "@/lib/brief-versions";
 import { ConfirmDestructiveAction } from "@/components/ui/confirm-destructive-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +60,8 @@ export function BriefEditor({
   const [uploaded, setUploaded] = useState<number[]>([]);
   const [history, setHistory] = useState<number | null>(null);
 
-  const previous = review.versions.find((v) => v.version === history);
+  const archivedVersions = briefHistory(review.versions, brief.version);
+  const previous = archivedVersions.find((v) => v.version === history);
 
   async function save() {
     for (const [index, file] of files.entries()) {
@@ -105,7 +107,7 @@ export function BriefEditor({
         <div className="flex items-center gap-3">
           <span className="flex h-7 items-center gap-2 rounded-md bg-white px-3 text-xs font-semibold text-neutral-800 shadow-2xs">
             <span className="h-2 w-2 rounded-md bg-emerald-500" />
-            Version {brief.version}
+            Current
           </span>
           <span className="text-xs font-medium text-neutral-500 capitalize">
             {mode === "brief" ? "Full Brief Mode" : "Summary Mode"}
@@ -119,10 +121,10 @@ export function BriefEditor({
           </span>
           <Select
             items={[
-              { value: "current", label: "Current editor" },
-              ...review.versions.map((v) => ({
+              { value: "current", label: "Current" },
+              ...archivedVersions.map((v) => ({
                 value: String(v.version),
-                label: `Brief v${v.version}`,
+                label: `Version ${v.archiveNumber}`,
               })),
             ]}
             value={history === null ? "current" : String(history)}
@@ -139,10 +141,10 @@ export function BriefEditor({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="current">Current editor</SelectItem>
-              {review.versions.map((v) => (
+              <SelectItem value="current">Current</SelectItem>
+              {archivedVersions.map((v) => (
                 <SelectItem key={v.version} value={String(v.version)}>
-                  Brief v{v.version}
+                  Version {v.archiveNumber}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -156,7 +158,7 @@ export function BriefEditor({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-semibold text-amber-900 text-sm">
               <History className="h-4 w-4 text-amber-600" />
-              Brief v{previous.version} Archive
+              Version {previous.archiveNumber} Archive
             </div>
             <span className="rounded-md bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
               Read Only

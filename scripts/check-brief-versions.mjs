@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import { briefHistory } from "../src/lib/brief-versions.ts";
+const base = { raw_text: "Original", summary: "Summary", points: [{ key: "light", value: "Morning", scope: "local" }], attachments: ["one", "two"], created_at: "2026-10-10" };
+const versions = [1, 2, 3, 4].map(version => ({ ...base, version, raw_text: version > 2 ? "Revised" : "Original" }));
+assert.deepEqual(briefHistory(versions, 4).map(v => [v.version, v.archiveNumber]), [[1, 1]]);
+assert.deepEqual(briefHistory([versions[0]], 1), []);
+assert.deepEqual(briefHistory([], 1), []);
+const next = { ...base, version: 5, raw_text: "Newest" };
+assert.deepEqual(briefHistory([...versions, next], 5).map(v => [v.version, v.archiveNumber]), [[3, 1]]);
+assert.deepEqual(briefHistory([{ ...base, version: 1 }, { ...base, version: 2, attachments: ["two", "one"] }], 2), []);
+assert.equal(briefHistory([{ ...base, version: 1 }, { ...base, version: 2, points: [{ ...base.points[0], scope: "global" }] }], 2).length, 1);
+assert.equal(briefHistory([{ ...base, version: 1 }, { ...base, version: 2, attachments: ["one"] }], 2).length, 1);
+assert.deepEqual(briefHistory([...versions, next, { ...base, version: 6 }], 6).map(v => [v.version, v.archiveNumber]), [[5, 1]]);
+console.log("Current plus one previous distinct version, duplicate saves, requirement and attachment changes passed.");
